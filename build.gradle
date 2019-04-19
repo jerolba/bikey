@@ -1,0 +1,41 @@
+plugins {
+  id "com.github.hierynomus.license" version "0.14.0"
+}
+
+apply plugin: 'java'
+apply plugin: 'jacoco'
+apply plugin: 'maven-publish'
+apply plugin: 'checkstyle'
+apply plugin: 'license'
+license {
+  header rootProject.file("config/HEADER")
+}
+
+compileJava   {
+  sourceCompatibility = '1.8'
+  targetCompatibility = '1.8'
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled true
+        html.enabled true
+    }
+}
+check.dependsOn jacocoTestReport
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile('org.junit.jupiter:junit-jupiter-api:5.4.2')
+    testRuntime('org.junit.jupiter:junit-jupiter-engine:5.4.2')
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+}
