@@ -1,0 +1,19 @@
+version: 2.1
+jobs:
+  build:
+    docker:
+      - image: circleci/openjdk:8-jdk
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "build.gradle" }}
+          - v1-dependencies-
+      - run: ./gradlew dependencies
+      - save_cache:
+          paths:
+            - ./.gradle
+          key: v1-dependencies-{{ checksum "build.gradle" }}        
+      - run: ./gradlew check
+      - store_test_results: 
+          path: ./build/test-results
