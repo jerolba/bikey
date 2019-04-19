@@ -17,3 +17,4 @@ jobs:
       - run: ./gradlew check
       - store_test_results: 
           path: ./build/test-results
+      - run: bash <(curl -s https://codecov.io/bash)
