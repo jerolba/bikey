@@ -14,11 +14,11 @@ Bikey implements Map and Set data structures on objects with composited keys **m
 
 Current collections libraries ([Guava](https://github.com/google/guava), [Commons Collection](https://commons.apache.org/proper/commons-collections/), [Eclipse Collections](https://github.com/eclipse/eclipse-collections)) have poor or not support to Maps and Sets of objects with two keys.
 
-Implementing it manually with a `Map<R, Map<C, V>>` or a `Map<Pair<R, C>, V>` consumes a lot of memory and [choosing an incorrect hashCode function](https://medium.com/@jerolba/hashing-and-maps-87950eed673f) for Pair (or equivalent) class can [penalice memory and CPU consumption](https://medium.com/@jerolba/composite-key-hashmaps-1422e2e6cdbc).
+Implementing it manually with a `Map<R, Map<C, V>>` or a `Map<Pair<R, C>, V>` consumes a lot of memory, and [choosing an incorrect hashCode function](https://medium.com/@jerolba/hashing-and-maps-87950eed673f) for Pair (or equivalent) class can [penalize memory and CPU consumption](https://medium.com/@jerolba/composite-key-hashmaps-1422e2e6cdbc).
 
-**Bikey collection can reduce to 15%-30% of the memory consumed** by a traditional double map (depends on the map _fill rate_) with none or low penalization in access time.
+**Bikey collection can reduce to 15%-30% of the memory consumed** by a traditional double map (depending on the map _fill rate_) with none or low penalization in access time.
 
-##Some Quick Examples
+## Some Quick Examples
 
 `BikeyMap` is defined like a `Map` but everywhere a key must be used, you must provide both key values:
 
@@ -53,6 +53,12 @@ Set<String> stores = stock.columnKeySet();
 if (stock.containsKey("tie-ref-789", "store-23")) {
     ....
 }
+
+//Get products and stores with stock
+BikeySet<String,String> collect = stock.entrySet().stream()
+    .filter(entry -> entry.getValue() > 0)
+    .map(BikeyEntry::getKey)
+    .collect(BikeyCollectors.toSet());
 
 //Do something with each element in the map
 stock.forEach((product, store, units) -> {
