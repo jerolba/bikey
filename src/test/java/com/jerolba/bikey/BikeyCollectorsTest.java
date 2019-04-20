@@ -15,51 +15,191 @@
  */
 package com.jerolba.bikey;
 
+import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 public class BikeyCollectorsTest {
 
-    @Test
-    public void canCollectEmptyMapKeys() {
-        BikeyMap<String, String, Integer> map = new TableBikeyMap<>();
-        BikeySet<String, String> set = map.entrySet().stream()
-                .map(BikeyEntry::getKey)
-                .collect(BikeyCollectors.toSet());
-        assertTrue(set.isEmpty());
-    }
+    ProductStoreInfo p1s1day1 = new ProductStoreInfo("shirt-ref-1", "store-ref-1", 2, "2019-01-14", 1);
+    ProductStoreInfo p1s2day1 = new ProductStoreInfo("shirt-ref-1", "store-ref-2", 1, "2019-01-14", 1);
+    ProductStoreInfo p4s1day1 = new ProductStoreInfo("pants-ref-4", "store-ref-1", 0, "2019-01-14", 0);
+    ProductStoreInfo p4s2day1 = new ProductStoreInfo("pants-ref-4", "store-ref-2", 4, "2019-01-14", 3);
+    ProductStoreInfo p4s3day1 = new ProductStoreInfo("pants-ref-4", "store-ref-3", 5, "2019-01-14", 2);
+    ProductStoreInfo p4s3day2 = new ProductStoreInfo("pants-ref-4", "store-ref-3", 3, "2019-01-15", 1);
+    ProductStoreInfo p4s3day3 = new ProductStoreInfo("pants-ref-4", "store-ref-3", 2, "2019-01-16", 2);
 
-    @Test
-    public void canCollectFilledMapKeys() {
-        BikeyMap<String, String, Integer> map = new TableBikeyMap<>();
-        map.put("1", "2", 3);
-        map.put("3", "5", 8);
-        map.put("5", "7", 12);
-        BikeySet<String, String> set = map.entrySet().stream()
-                .map(BikeyEntry::getKey)
-                .collect(BikeyCollectors.toSet());
-        assertTrue(set.contains("1", "2"));
-        assertTrue(set.contains("3", "5"));
-        assertTrue(set.contains("5", "7"));
-        assertEquals(3, set.size());
-    }
+    List<ProductStoreInfo> allInfo = asList(p1s1day1, p1s2day1, p4s1day1, p4s2day1, p4s3day1, p4s3day2,
+            p4s3day3);
 
-    @Test
-    public void canCollectWithParallelStream() {
-        Set<Bikey<Integer, Integer>> set = new HashSet<>();
-        for (int i = 0; i < 2000; i++) {
-            for (int j = 0; j < 20; j++) {
-                set.add(new Bikey<>(i, j));
-            }
+    @Nested
+    class ToMapCollector {
+
+        @Test
+        public void mapEmtpyCollection() {
+            Collection<ProductStoreInfo> empty = Collections.emptyList();
+            BikeyMap<String, String, Integer> collect = empty.stream()
+                    .collect(BikeyCollectors.toMap(
+                            ProductStoreInfo::getProductStore,
+                            ProductStoreInfo::getStock));
+            assertTrue(collect.isEmpty());
         }
-        BikeySet<Integer, Integer> collected = set.parallelStream()
-                .filter(bikey -> bikey.getRow() < 100)
-                .collect(BikeyCollectors.toSet());
-        assertEquals(20 * 100, collected.size());
+
+        @Test
+        public void mapFilledCollection() {
+            BikeyMap<String, String, Integer> totalStock = allInfo.stream()
+                    .filter(ps -> ps.getDate().equals("2019-01-14"))
+                    .collect(BikeyCollectors.toMap(
+                            ProductStoreInfo::getProductStore,
+                            ps -> ps.getStock()));
+            assertStocks(totalStock);
+        }
+
+        @Test
+        public void mapFilledCollectionWithSuppliedMapConstructor() {
+            BikeyMap<String, String, Integer> totalStock = allInfo.stream()
+                    .filter(ps -> ps.getDate().equals("2019-01-14"))
+                    .collect(BikeyCollectors.toMap(
+                            ProductStoreInfo::getProductStore,
+                            ps -> ps.getStock(),
+                            () -> new MatrixBikeyMap<>(10)));
+            assertStocks(totalStock);
+        }
+
+        private void assertStocks(BikeyMap<String, String, Integer> totalStock) {
+            assertEquals(5, totalStock.size());
+            assertEquals(2, totalStock.get("shirt-ref-1", "store-ref-1"));
+            assertEquals(1, totalStock.get("shirt-ref-1", "store-ref-2"));
+            assertEquals(0, totalStock.get("pants-ref-4", "store-ref-1"));
+            assertEquals(4, totalStock.get("pants-ref-4", "store-ref-2"));
+            assertEquals(5, totalStock.get("pants-ref-4", "store-ref-3"));
+        }
+
+        @Test
+        public void defaultMapRaiseErrorIfRepeatedKey() {
+            assertThrows(IllegalStateException.class, () -> {
+                allInfo.stream()
+                        .collect(BikeyCollectors.toMap(
+                                ProductStoreInfo::getProductStore,
+                                ProductStoreInfo::getStock));
+            });
+        }
+
+        @Test
+        public void mapFilledCollectionWithMerge() {
+            BikeyMap<String, String, Integer> sales = allInfo.stream()
+                    .collect(BikeyCollectors.toMap(
+                            ProductStoreInfo::getProductStore,
+                            ProductStoreInfo::getSales,
+                            (a, b) -> a + b));
+            assertSales(sales);
+        }
+
+        @Test
+        public void mapFilledCollectionWithMergerAndSuppliedMapConstructor() {
+            BikeyMap<String, String, Integer> sales = allInfo.stream()
+                    .collect(BikeyCollectors.toMap(
+                            ProductStoreInfo::getProductStore,
+                            ProductStoreInfo::getSales,
+                            (a, b) -> a + b,
+                            () -> new MatrixBikeyMap<>(10)));
+            assertSales(sales);
+        }
+
+        private void assertSales(BikeyMap<String, String, Integer> sales) {
+            assertEquals(5, sales.size());
+            assertEquals(1, sales.get("shirt-ref-1", "store-ref-1"));
+            assertEquals(1, sales.get("shirt-ref-1", "store-ref-2"));
+            assertEquals(0, sales.get("pants-ref-4", "store-ref-1"));
+            assertEquals(3, sales.get("pants-ref-4", "store-ref-2"));
+            assertEquals(5, sales.get("pants-ref-4", "store-ref-3"));
+        }
+
     }
 
+    @Nested
+    class ToSetCollector {
+
+        @Test
+        public void canCollectEmptyMapKeys() {
+            BikeyMap<String, String, ProductStoreInfo> map = new TableBikeyMap<>();
+            BikeySet<String, String> set = map.entrySet().stream()
+                    .map(BikeyEntry::getKey)
+                    .collect(BikeyCollectors.toSet());
+            assertTrue(set.isEmpty());
+        }
+
+        @Test
+        public void canCollectFilledMapKeys() {
+            BikeySet<String, String> set = allInfo.stream()
+                    .map(ProductStoreInfo::getProductStore)
+                    .collect(BikeyCollectors.toSet());
+            assertTrue(set.contains("shirt-ref-1", "store-ref-1"));
+            assertTrue(set.contains("shirt-ref-1", "store-ref-2"));
+            assertTrue(set.contains("pants-ref-4", "store-ref-1"));
+            assertTrue(set.contains("pants-ref-4", "store-ref-2"));
+            assertTrue(set.contains("pants-ref-4", "store-ref-3"));
+            assertEquals(5, set.size());
+        }
+
+        @Test
+        public void canCollectWithParallelStream() {
+            Set<Bikey<Integer, Integer>> set = new HashSet<>();
+            for (int i = 0; i < 2000; i++) {
+                for (int j = 0; j < 20; j++) {
+                    set.add(new Bikey<>(i, j));
+                }
+            }
+            BikeySet<Integer, Integer> collected = set.parallelStream()
+                    .filter(bikey -> bikey.getRow() < 100)
+                    .collect(BikeyCollectors.toSet());
+            assertEquals(20 * 100, collected.size());
+        }
+    }
+
+    private static class ProductStoreInfo {
+
+        private String productRef;
+        private String storeRef;
+        private int stock;
+        private String date;
+        private int sales;
+
+        ProductStoreInfo(String productRef, String storeRef, int stock, String date, int sales) {
+            this.productRef = productRef;
+            this.storeRef = storeRef;
+            this.stock = stock;
+            this.date = date;
+            this.sales = sales;
+        }
+
+        public Bikey<String, String> getProductStore() {
+            return new Bikey<>(getProductRef(), getStoreRef());
+        }
+
+        public String getProductRef() {
+            return productRef;
+        }
+
+        public String getStoreRef() {
+            return storeRef;
+        }
+
+        public int getStock() {
+            return stock;
+        }
+
+        public String getDate() {
+            return date;
+        }
+
+        public int getSales() {
+            return sales;
+        }
+
+    }
 }
