@@ -20,6 +20,17 @@ import java.util.stream.Collector;
 
 public class BikeyCollectors {
 
+    /**
+     * Returns a {@code Collector} that accumulates the input elements into a
+     * new {@code BikeySet}.
+     *
+     * @param <R>
+     *            row key type of the bikeys
+     * @param <C>
+     *            column key type of the bikeys
+     * @return a {@code Collector} which collects all the input elements into a
+     *         {@code BikeySet}
+     */
     public static <R, C> Collector<Bikey<R, C>, ?, BikeySet<R, C>> toSet() {
         return Collector.of(
                 (Supplier<BikeySet<R, C>>) TableBikeySet::new,
@@ -95,6 +106,50 @@ public class BikeyCollectors {
      *            column key type of the map keys
      * @param <U>
      *            the output type of the value mapping function
+     * @param rowKeyMapper
+     *            a mapping function to produce row key
+     * @param columnKeyMapper
+     *            a mapping function to produce column key
+     * @param valueMapper
+     *            a mapping function to produce values
+     * @return a {@code Collector} which collects elements into a
+     *         {@code BikeMap} whose keys are the result of applying a key
+     *         mapping function to the input elements.
+     *
+     * @see #toMap(Function, Function, Function, BinaryOperator)
+     * @see #toMap(Function, Function, Function, Supplier)
+     * @see #toMap(Function, Function, Function, BinaryOperator, Supplier)
+     */
+    public static <T, R, C, U> Collector<T, ?, BikeyMap<R, C, U>> toMap(
+            Function<? super T, ? extends R> rowKeyMapper,
+            Function<? super T, ? extends C> columnKeyMapper,
+            Function<? super T, ? extends U> valueMapper) {
+        return toMap(rowKeyMapper, columnKeyMapper, valueMapper, throwingMerger(), TableBikeyMap::new);
+    }
+
+    /**
+     * Returns a {@code Collector} that accumulates elements into a
+     * {@code BikeyMap} whose keys and values are the result of applying the
+     * provided mapping functions to the input elements.
+     *
+     * <p>
+     * If the mapped bikey (row and column) contains duplicates (according to
+     * {@link Object#equals(Object)}), the value mapping function is applied to
+     * each equal element, and the results are merged using the provided merging
+     * function.
+     *
+     * <p>
+     * The returned {@code Collector} is not concurrent and doesn't support
+     * parallel stream pipelines.
+     *
+     * @param <T>
+     *            the type of the input elements
+     * @param <R>
+     *            row key type of the map keys
+     * @param <C>
+     *            column key type of the map keys
+     * @param <U>
+     *            the output type of the value mapping function
      * @param keyMapper
      *            a mapping function to produce bikeys
      * @param valueMapper
@@ -115,6 +170,54 @@ public class BikeyCollectors {
             Function<? super T, ? extends U> valueMapper,
             Supplier<M> mapSupplier) {
         return toMap(keyMapper, valueMapper, throwingMerger(), mapSupplier);
+    }
+
+    /**
+     * Returns a {@code Collector} that accumulates elements into a
+     * {@code BikeyMap} whose keys and values are the result of applying the
+     * provided mapping functions to the input elements.
+     *
+     * <p>
+     * If the mapped bikey (row and column) contains duplicates (according to
+     * {@link Object#equals(Object)}), the value mapping function is applied to
+     * each equal element, and the results are merged using the provided merging
+     * function.
+     *
+     * <p>
+     * The returned {@code Collector} is not concurrent and doesn't support
+     * parallel stream pipelines.
+     *
+     * @param <T>
+     *            the type of the input elements
+     * @param <R>
+     *            row key type of the map keys
+     * @param <C>
+     *            column key type of the map keys
+     * @param <U>
+     *            the output type of the value mapping function
+     * @param rowKeyMapper
+     *            a mapping function to produce row key
+     * @param columnKeyMapper
+     *            a mapping function to produce column key
+     * @param valueMapper
+     *            a mapping function to produce values
+     * @param mapSupplier
+     *            a function which returns a new, empty {@code BikeyMap} into
+     *            which the results will be inserted
+     * @return a {@code Collector} which collects elements into a
+     *         {@code BikeMap} whose keys are the result of applying a key
+     *         mapping function to the input elements.
+     *
+     * @see #toMap(Function, Function, Function)
+     * @see #toMap(Function, Function, Function, BinaryOperator)
+     * @see #toMap(Function, Function, Function, BinaryOperator, Supplier)
+     */
+    public static <T, R, C, U, M extends BikeyMap<R, C, U>> Collector<T, ?, M> toMap(
+            Function<? super T, ? extends R> rowKeyMapper,
+            Function<? super T, ? extends C> columnKeyMapper,
+            Function<? super T, ? extends U> valueMapper,
+            Supplier<M> mapSupplier) {
+        return toMap(rowKeyMapper, columnKeyMapper, valueMapper, throwingMerger(), mapSupplier);
     }
 
     /**
@@ -185,6 +288,58 @@ public class BikeyCollectors {
      * @param <T>
      *            the type of the input elements
      * @param <R>
+     *            row key type of the map keys
+     * @param <C>
+     *            column key type of the map keys
+     * @param <U>
+     *            the output type of the value mapping function
+     * @param rowKeyMapper
+     *            a mapping function to produce row key
+     * @param columnKeyMapper
+     *            a mapping function to produce column key
+     * @param valueMapper
+     *            a mapping function to produce values
+     * @param mergeFunction
+     *            a merge function, used to resolve collisions between values
+     *            associated with the same key, as supplied to
+     *            {@link BikeyMap#merge(Object, Object, Object, BiFunction)}
+     * @return a {@code Collector} which collects elements into a
+     *         {@code BikeMap} whose keys are the result of applying a key
+     *         mapping function to the input elements, and whose values are the
+     *         result of applying a value mapping function to all input elements
+     *         equal to the key and combining them using the merge function
+     *
+     * @see #toMap(Function, Function, Function)
+     * @see #toMap(Function, Function, Function, Supplier)
+     * @see #toMap(Function, Function, Function, BinaryOperator, Supplier)
+     */
+    public static <T, R, C, U> Collector<T, ?, BikeyMap<R, C, U>> toMap(
+            Function<? super T, ? extends R> rowKeyMapper,
+            Function<? super T, ? extends C> columnKeyMapper,
+            Function<? super T, ? extends U> valueMapper,
+            BinaryOperator<U> mergeFunction) {
+        return toMap(rowKeyMapper, columnKeyMapper, valueMapper, mergeFunction, TableBikeyMap::new);
+    }
+
+    /**
+     * Returns a {@code Collector} that accumulates elements into a
+     * {@code BikeyMap} whose keys and values are the result of applying the
+     * provided mapping functions to the input elements.
+     *
+     * <p>
+     * If the mapped bikey (row and column) contains duplicates (according to
+     * {@link Object#equals(Object)}), the value mapping function is applied to
+     * each equal element, and the results are merged using the provided merging
+     * function. The {@code BikeyMap} is created by a provided supplier
+     * function.
+     *
+     * <p>
+     * The returned {@code Collector} is not concurrent and doesn't support
+     * parallel stream pipelines.
+     *
+     * @param <T>
+     *            the type of the input elements
+     * @param <R>
      *            the output row type of the key mapping function
      * @param <C>
      *            the output column type of the key mapping function
@@ -219,8 +374,68 @@ public class BikeyCollectors {
             BinaryOperator<U> mergeFunction,
             Supplier<M> mapSupplier) {
         BiConsumer<M, T> accumulator = (map, element) -> map.merge(keyMapper.apply(element).getRow(),
-                keyMapper.apply(element).getColumn(),
-                valueMapper.apply(element), mergeFunction);
+                keyMapper.apply(element).getColumn(), valueMapper.apply(element), mergeFunction);
+        return Collector.of(mapSupplier, accumulator, mapMerger(mergeFunction),
+                Collector.Characteristics.UNORDERED, Collector.Characteristics.IDENTITY_FINISH);
+    }
+
+    /**
+     * Returns a {@code Collector} that accumulates elements into a
+     * {@code BikeyMap} whose keys and values are the result of applying the
+     * provided mapping functions to the input elements.
+     *
+     * <p>
+     * If the mapped bikey (row and column) contains duplicates (according to
+     * {@link Object#equals(Object)}), the value mapping function is applied to
+     * each equal element, and the results are merged using the provided merging
+     * function. The {@code BikeyMap} is created by a provided supplier
+     * function.
+     *
+     * <p>
+     * The returned {@code Collector} is not concurrent and doesn't support
+     * parallel stream pipelines.
+     *
+     * @param <T>
+     *            the type of the input elements
+     * @param <R>
+     *            the output row type of the key mapping function
+     * @param <C>
+     *            the output column type of the key mapping function
+     * @param <U>
+     *            the output type of the value mapping function
+     * @param <M>
+     *            the type of the resulting {@code BikeMap}
+     * @param rowKeyMapper
+     *            a mapping function to produce row key
+     * @param columnKeyMapper
+     *            a mapping function to produce column key
+     * @param valueMapper
+     *            a mapping function to produce values
+     * @param mergeFunction
+     *            a merge function, used to resolve collisions between values
+     *            associated with the same key, as supplied to
+     *            {@link BikeyMap#merge(Object, Object, Object, BiFunction)}
+     * @param mapSupplier
+     *            a function which returns a new, empty {@code BikeyMap} into
+     *            which the results will be inserted
+     * @return a {@code Collector} which collects elements into a
+     *         {@code BikeMap} whose keys are the result of applying a key
+     *         mapping function to the input elements, and whose values are the
+     *         result of applying a value mapping function to all input elements
+     *         equal to the key and combining them using the merge function
+     *
+     * @see #toMap(Function, Function, Function)
+     * @see #toMap(Function, Function, Function, Supplier)
+     * @see #toMap(Function, Function, Function, BinaryOperator)
+     */
+    public static <T, R, C, U, M extends BikeyMap<R, C, U>> Collector<T, ?, M> toMap(
+            Function<? super T, ? extends R> rowKeyMapper,
+            Function<? super T, ? extends C> columnKeyMapper,
+            Function<? super T, ? extends U> valueMapper,
+            BinaryOperator<U> mergeFunction,
+            Supplier<M> mapSupplier) {
+        BiConsumer<M, T> accumulator = (map, element) -> map.merge(rowKeyMapper.apply(element),
+                columnKeyMapper.apply(element), valueMapper.apply(element), mergeFunction);
         return Collector.of(mapSupplier, accumulator, mapMerger(mergeFunction),
                 Collector.Characteristics.UNORDERED, Collector.Characteristics.IDENTITY_FINISH);
     }
