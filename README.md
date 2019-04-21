@@ -8,19 +8,19 @@
     <span style="font-size: 25px"><h1>Bikey</h1></span>
 </div>
 
-Bikey implements Map and Set data structures on objects with composited keys **minimizing memory consumption**.
+Bikey implements Map and Set data structures with two keys minimizing memory consumption.
 
 ## Why Bikey collections?
 
-Current collections libraries ([Guava](https://github.com/google/guava), [Commons Collection](https://commons.apache.org/proper/commons-collections/), [Eclipse Collections](https://github.com/eclipse/eclipse-collections)) have poor or not support to Maps and Sets of objects with two keys.
+Current collections libraries ([Guava](https://github.com/google/guava), [Commons Collection](https://commons.apache.org/proper/commons-collections/), [Eclipse Collections](https://github.com/eclipse/eclipse-collections)) have poor or not support to Maps and Sets with two keys.
 
-Implementing it manually with a `Map<R, Map<C, V>>` or a `Map<Pair<R, C>, V>` consumes a lot of memory, and [choosing an incorrect hashCode function](https://medium.com/@jerolba/hashing-and-maps-87950eed673f) for Pair (or equivalent) class can [penalize memory and CPU consumption](https://medium.com/@jerolba/composite-key-hashmaps-1422e2e6cdbc).
+Implementing it manually with a `Map<R, Map<C, V>>`, `Map<Pair<R, C>, V>` or a `Set<Pair<R, C>>` consumes a lot of memory, and [choosing an incorrect hashCode function](https://medium.com/@jerolba/hashing-and-maps-87950eed673f) for Pair (or equivalent) class can [penalize memory and CPU consumption](https://medium.com/@jerolba/composite-key-hashmaps-1422e2e6cdbc).
 
-**Bikey collection can reduce to 15%-30% of the memory consumed** by a traditional double map (depending on the map _fill rate_) with none or low penalization in access time.
+**Bikey Map collection can reduce to a 15%-30% of consumed memory** by a traditional double map (depending on the map _fill rate_) and **Bikey Set collection can reduce to a 1% of consumed memory by a Set\<Pair\>**, with none or low penalization in access time.
 
 ## Some Quick Examples
 
-`BikeyMap` is defined like a `Map` but everywhere a key must be used, you must provide both key values:
+`BikeyMap` API is defined like the [Map](https://docs.oracle.com/javase/8/docs/api/java/util/Map.html) interface but everywhere a key is needed, you must provide both key values:
 
 ```java
 BikeyMap<String, String, Integer> stock = new TableBikeyMap<>();
@@ -55,7 +55,7 @@ if (stock.containsKey("tie-ref-789", "store-23")) {
 }
 
 //Get products and stores with stock
-BikeySet<String,String> collect = stock.entrySet().stream()
+BikeySet<String, String> withStock = stock.entrySet().stream()
     .filter(entry -> entry.getValue() > 0)
     .map(BikeyEntry::getKey)
     .collect(BikeyCollectors.toSet());
@@ -64,11 +64,34 @@ BikeySet<String,String> collect = stock.entrySet().stream()
 stock.forEach((product, store, units) -> {
     System.out.println("Product " + product + " has " + units + " in store " + store);
 });
-
 ```
-
 To simplify the example `String`s has been used as keys, but any object that implements `equals` and `hashCode` can be used as row or column key.
 
+`BikeySet` API is defined like the [Set](https://docs.oracle.com/javase/8/docs/api/java/util/Set.html) interface but everywhere an element is used, changes to two values:
+
+```java
+BikeySet<String, String> avengerFilm = new TableBikeySet<>();
+avengerFilm.add("Hulk", "The Avengers");
+avengerFilm.add("Iron Man", "The Avengers");
+avengerFilm.add("Thor", "The Avengers");
+avengerFilm.add("Thor", "Thor: Ragnarok");
+avengerFilm.add("Captain America", "Avengers: Age of Ultron");
+avengerFilm.add("Captain America", "Avengers: Infinity War");
+avengerFilm.add("Captain America", "Doctor Strange");
+....
+
+if (avengerFilm.contains("Iron Man", "Black Panther")) {
+    ....
+}
+if (avengerFilm.contains("Hulk", "Avengers: Age of Ultron")) {
+    ....
+}
+
+List<String> ironManFilms = avengerFilm.stream()
+    .filter(entry -> entry.getRow().equals("Iron Man"))
+    .map(Bikey::getColumn)
+    .collect(toList());
+```
 
 ## Contribute
 Feel free to dive in! [Open an issue](https://github.com/jerolba/jfleet/issues/new) or submit PRs.
