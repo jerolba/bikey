@@ -264,8 +264,8 @@ public class TableBikeyMap<R, C, V> implements BikeyMap<R, C, V>, Cloneable {
 
         public BikeyEntry<R, C, V> nextIt() {
             IntObjectEntry<V> next = columnsIterator.next();
-            BikeyEntry<R, C, V> res = new BikeyEntry<>(currentRow, columnsValues.get(next.getIntKey()),
-                    next.getValue());
+            BikeyEntry<R, C, V> res = new SimpleBikeyEntry<>(currentRow, columnsValues.get(
+                    next.getIntKey()), next.getValue());
             if (!columnsIterator.hasNext()) {
                 moveToNextRow();
             }
@@ -397,7 +397,7 @@ public class TableBikeyMap<R, C, V> implements BikeyMap<R, C, V>, Cloneable {
 
         @Override
         public void forEach(Consumer<? super BikeyEntry<R, C, V>> action) {
-            TableBikeyMap.this.forEach((r, c, v) -> action.accept(new BikeyEntry<>(r, c, v)));
+            TableBikeyMap.this.forEach((r, c, v) -> action.accept(new SimpleBikeyEntry<>(r, c, v)));
         }
 
     }
@@ -536,4 +536,102 @@ public class TableBikeyMap<R, C, V> implements BikeyMap<R, C, V>, Cloneable {
         }
     }
 
+    static class SimpleBikeyEntry<R, C, V> implements BikeyEntry<R, C, V> {
+
+        private final R row;
+        private final C column;
+        private final V value;
+
+        SimpleBikeyEntry(R row, C column, V value) {
+            this.row = row;
+            this.column = column;
+            this.value = value;
+        }
+
+        @Override
+        public Bikey<R, C> getKey() {
+            return new BikeyImpl<>(row, column);
+        }
+
+        @Override
+        public R getRow() {
+            return row;
+        }
+
+        @Override
+        public C getColumn() {
+            return column;
+        }
+
+        @Override
+        public V getValue() {
+            return value;
+        }
+
+        /**
+         * Because IntObjectEntry has no reference to original map node, is not
+         * possible to modify its value.
+         *
+         * @param value
+         *            new value to be stored in this entry
+         * @return old value corresponding to the entry
+         * @throws UnsupportedOperationException
+         *             because it has no reference to original map
+         */
+        @Override
+        public V setValue(V value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int hashCode() {
+            int prime = 31;
+            int result = prime + ((column == null) ? 0 : column.hashCode());
+            result = prime * result + ((row == null) ? 0 : row.hashCode());
+            result = prime * result + ((value == null) ? 0 : value.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            BikeyEntry<?, ?, ?> other = (BikeyEntry<?, ?, ?>) obj;
+            if (row == null) {
+                if (other.getRow() != null) {
+                    return false;
+                }
+            } else if (!row.equals(other.getRow())) {
+                return false;
+            }
+            if (column == null) {
+                if (other.getColumn() != null) {
+                    return false;
+                }
+            } else if (!column.equals(other.getColumn())) {
+                return false;
+            }
+            if (value == null) {
+                if (other.getValue() != null) {
+                    return false;
+                }
+            } else if (!value.equals(other.getValue())) {
+                return false;
+            }
+            return true;
+        }
+
+        @Override
+        public String toString() {
+            return "[" + row + ", " + column + "]=" + value;
+        }
+
+    }
 }

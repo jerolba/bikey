@@ -24,6 +24,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import com.jerolba.bikey.TableBikeyMap.SimpleBikeyEntry;
+
 public abstract class BikeyMapTest {
 
     BikeyMap<String, String, String> map = getNewBikeyMap();
@@ -609,14 +611,14 @@ public abstract class BikeyMapTest {
         }
 
         void assertContainsAllEntries(Collection<BikeyEntry<String, String, String>> entries) {
-            assertTrue(entries.contains(new BikeyEntry<>("0", "1", "0-1")));
-            assertTrue(entries.contains(new BikeyEntry<>("0", "2", "0-2")));
-            assertTrue(entries.contains(new BikeyEntry<>("1", "2", "1-2")));
-            assertTrue(entries.contains(new BikeyEntry<>("1", "5", "1-5")));
-            assertTrue(entries.contains(new BikeyEntry<>("2", "3", "2-3")));
-            assertTrue(entries.contains(new BikeyEntry<>("2", "1", "2-1")));
-            assertTrue(entries.contains(new BikeyEntry<>("3", "6", "3-6")));
-            assertFalse(entries.contains(new BikeyEntry<>("NONE", "NONE", "NONE-NONE")));
+            assertTrue(entries.contains(new SimpleBikeyEntry<>("0", "1", "0-1")));
+            assertTrue(entries.contains(new SimpleBikeyEntry<>("0", "2", "0-2")));
+            assertTrue(entries.contains(new SimpleBikeyEntry<>("1", "2", "1-2")));
+            assertTrue(entries.contains(new SimpleBikeyEntry<>("1", "5", "1-5")));
+            assertTrue(entries.contains(new SimpleBikeyEntry<>("2", "3", "2-3")));
+            assertTrue(entries.contains(new SimpleBikeyEntry<>("2", "1", "2-1")));
+            assertTrue(entries.contains(new SimpleBikeyEntry<>("3", "6", "3-6")));
+            assertFalse(entries.contains(new SimpleBikeyEntry<>("NONE", "NONE", "NONE-NONE")));
             assertEquals(7, entries.size());
         }
 
