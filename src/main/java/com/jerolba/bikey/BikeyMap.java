@@ -177,6 +177,7 @@ public interface BikeyMap<R, C, V> extends Iterable<BikeyEntry<R, C, V>> {
      *            object to be compared for equality with this map
      * @return <tt>true</tt> if the specified object is equal to this map
      */
+    @Override
     boolean equals(Object o);
 
     /**
@@ -192,6 +193,7 @@ public interface BikeyMap<R, C, V> extends Iterable<BikeyEntry<R, C, V>> {
      * @see Object#equals(Object)
      * @see #equals(Object)
      */
+    @Override
     int hashCode();
 
     /**
@@ -216,7 +218,7 @@ public interface BikeyMap<R, C, V> extends Iterable<BikeyEntry<R, C, V>> {
      */
     default void forEach(BiConsumer<Bikey<R, C>, ? super V> action) {
         Objects.requireNonNull(action);
-        forEach((r, c, v) -> action.accept(new Bikey<>(r, c), v));
+        forEach((r, c, v) -> action.accept(new BikeyImpl<>(r, c), v));
     }
 
     /**

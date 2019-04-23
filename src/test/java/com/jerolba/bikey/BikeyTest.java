@@ -23,37 +23,37 @@ public class BikeyTest {
 
     @Test
     public void hashCodeTest() {
-        Bikey<String, String> someNull = new Bikey<>(null, null);
-        Bikey<String, String> some = new Bikey<>("1", "2");
-        Bikey<String, String> other = new Bikey<>("1", "3");
+        Bikey<String, String> someNull = new BikeyImpl<>(null, null);
+        Bikey<String, String> some = new BikeyImpl<>("1", "2");
+        Bikey<String, String> other = new BikeyImpl<>("1", "3");
         assertNotEquals(someNull.hashCode(), some.hashCode());
         assertNotEquals(someNull.hashCode(), other.hashCode());
         assertNotEquals(some.hashCode(), other.hashCode());
-        assertNotEquals(some.hashCode(), new Bikey<>("1", "2"));
+        assertNotEquals(some.hashCode(), new BikeyImpl<>("1", "2"));
     }
 
     @Test
     public void equalsTest() {
-        Bikey<String, String> some = new Bikey<>("1", "2");
+        Bikey<String, String> some = new BikeyImpl<>("1", "2");
         assertTrue(some.equals(some));
         assertFalse(some.equals(null));
         assertFalse(some.equals("foo"));
-        assertFalse(some.equals(new Bikey<>("0", "1")));
-        assertFalse(some.equals(new Bikey<>("1", "3")));
-        assertFalse(some.equals(new Bikey<>(null, "2")));
-        assertFalse(some.equals(new Bikey<>("1", null)));
-        assertTrue(some.equals(new Bikey<>("1", "2")));
+        assertFalse(some.equals(new BikeyImpl<>("0", "1")));
+        assertFalse(some.equals(new BikeyImpl<>("1", "3")));
+        assertFalse(some.equals(new BikeyImpl<>(null, "2")));
+        assertFalse(some.equals(new BikeyImpl<>("1", null)));
+        assertTrue(some.equals(new BikeyImpl<>("1", "2")));
 
-        Bikey<String, String> withNulls = new Bikey<>(null, null);
-        assertFalse(withNulls.equals(new Bikey<>("1", "2")));
-        assertFalse(withNulls.equals(new Bikey<>(null, "2")));
-        assertFalse(withNulls.equals(new Bikey<>("1", null)));
-        assertTrue(withNulls.equals(new Bikey<>(null, null)));
+        Bikey<String, String> withNulls = new BikeyImpl<>(null, null);
+        assertFalse(withNulls.equals(new BikeyImpl<>("1", "2")));
+        assertFalse(withNulls.equals(new BikeyImpl<>(null, "2")));
+        assertFalse(withNulls.equals(new BikeyImpl<>("1", null)));
+        assertTrue(withNulls.equals(new BikeyImpl<>(null, null)));
     }
 
     @Test
     public void toStringTest() {
-        Bikey<String, String> some = new Bikey<>("1", "2");
+        Bikey<String, String> some = new BikeyImpl<>("1", "2");
         assertEquals("[1, 2]", some.toString());
     }
 

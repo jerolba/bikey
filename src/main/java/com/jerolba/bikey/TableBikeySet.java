@@ -114,6 +114,7 @@ public class TableBikeySet<R, C> extends AbstractSet<Bikey<R, C>> implements Bik
         return valuesInRow.keySet();
     }
 
+    @Override
     public Set<C> columnKeySet() {
         return columnIndex.keySet();
     }
@@ -156,7 +157,7 @@ public class TableBikeySet<R, C> extends AbstractSet<Bikey<R, C>> implements Bik
 
     @Override
     public void forEach(Consumer<? super Bikey<R, C>> action) {
-        forEach((r, c) -> action.accept(new Bikey<>(r, c)));
+        forEach((r, c) -> action.accept(new BikeyImpl<>(r, c)));
     }
 
     /**
@@ -201,6 +202,7 @@ public class TableBikeySet<R, C> extends AbstractSet<Bikey<R, C>> implements Bik
      *
      * @return a shallow copy of this set
      */
+    @Override
     @SuppressWarnings("unchecked")
     public Object clone() {
         try {
@@ -238,7 +240,7 @@ public class TableBikeySet<R, C> extends AbstractSet<Bikey<R, C>> implements Bik
                 throw new NoSuchElementException();
             }
             C column = columnsValues.get(bitSetIterator);
-            Bikey<R, C> bikey = new Bikey<>(currentRowKeyValue, column);
+            Bikey<R, C> bikey = new BikeyImpl<>(currentRowKeyValue, column);
             bitSetIterator = currentBitSet.nextSetBit(bitSetIterator + 1);
             if (bitSetIterator == -1) {
                 iterateMap();
@@ -313,6 +315,7 @@ public class TableBikeySet<R, C> extends AbstractSet<Bikey<R, C>> implements Bik
             this.count--;
         }
 
+        @Override
         public ColumnInfo clone() {
             ColumnInfo newOne = new ColumnInfo(this.index);
             newOne.count = this.count;

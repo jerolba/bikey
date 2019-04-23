@@ -136,6 +136,7 @@ public class TableBikeyMap<R, C, V> implements BikeyMap<R, C, V>, Cloneable {
      *
      * @return a shallow copy of this set
      */
+    @Override
     @SuppressWarnings("unchecked")
     public Object clone() {
         try {
@@ -358,7 +359,7 @@ public class TableBikeyMap<R, C, V> implements BikeyMap<R, C, V>, Cloneable {
         @Override
         public void forEach(Consumer<? super Bikey<R, C>> action) {
             Objects.requireNonNull(action);
-            TableBikeyMap.this.forEachBikey((r, c) -> action.accept(new Bikey<>(r, c)));
+            TableBikeyMap.this.forEachBikey((r, c) -> action.accept(new BikeyImpl<>(r, c)));
         }
 
     }
@@ -438,8 +439,7 @@ public class TableBikeyMap<R, C, V> implements BikeyMap<R, C, V>, Cloneable {
 
         @Override
         public Bikey<R, C> next() {
-            BikeyEntry<R, C, V> next = nextIt();
-            return new Bikey<>(next.getRow(), next.getColumn());
+            return nextIt();
         }
 
     }
@@ -528,6 +528,7 @@ public class TableBikeyMap<R, C, V> implements BikeyMap<R, C, V>, Cloneable {
             this.count--;
         }
 
+        @Override
         public ColumnInfo clone() {
             ColumnInfo newOne = new ColumnInfo(this.index);
             newOne.count = this.count;

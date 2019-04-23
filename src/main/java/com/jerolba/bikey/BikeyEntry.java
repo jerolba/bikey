@@ -17,7 +17,7 @@ package com.jerolba.bikey;
 
 import java.util.Map;
 
-public class BikeyEntry<R, C, V> implements Map.Entry<Bikey<R, C>, V> {
+public class BikeyEntry<R, C, V> implements Map.Entry<Bikey<R, C>, V>, Bikey<R, C> {
 
     private final R row;
     private final C column;
@@ -31,17 +31,20 @@ public class BikeyEntry<R, C, V> implements Map.Entry<Bikey<R, C>, V> {
 
     @Override
     public Bikey<R, C> getKey() {
-        return new Bikey<>(row, column);
+        return new BikeyImpl<>(row, column);
     }
 
+    @Override
     public R getRow() {
         return row;
     }
 
+    @Override
     public C getColumn() {
         return column;
     }
 
+    @Override
     public V getValue() {
         return value;
     }

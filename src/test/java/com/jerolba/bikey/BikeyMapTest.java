@@ -585,14 +585,14 @@ public abstract class BikeyMapTest {
         }
 
         void assertContainsAllKeys(Set<Bikey<String, String>> keySet) {
-            assertTrue(keySet.contains(new Bikey<>("0", "1")));
-            assertTrue(keySet.contains(new Bikey<>("0", "2")));
-            assertTrue(keySet.contains(new Bikey<>("1", "2")));
-            assertTrue(keySet.contains(new Bikey<>("1", "5")));
-            assertTrue(keySet.contains(new Bikey<>("2", "3")));
-            assertTrue(keySet.contains(new Bikey<>("2", "1")));
-            assertTrue(keySet.contains(new Bikey<>("3", "6")));
-            assertFalse(keySet.contains(new Bikey<>("NONE", "NONE")));
+            assertTrue(keySet.contains(new BikeyImpl<>("0", "1")));
+            assertTrue(keySet.contains(new BikeyImpl<>("0", "2")));
+            assertTrue(keySet.contains(new BikeyImpl<>("1", "2")));
+            assertTrue(keySet.contains(new BikeyImpl<>("1", "5")));
+            assertTrue(keySet.contains(new BikeyImpl<>("2", "3")));
+            assertTrue(keySet.contains(new BikeyImpl<>("2", "1")));
+            assertTrue(keySet.contains(new BikeyImpl<>("3", "6")));
+            assertFalse(keySet.contains(new BikeyImpl<>("NONE", "NONE")));
             assertEquals(7, keySet.size());
         }
 

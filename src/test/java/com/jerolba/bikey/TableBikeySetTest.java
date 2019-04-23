@@ -60,7 +60,7 @@ public class TableBikeySetTest {
 
     @Test
     public void bikeyCanBeAdded() {
-        set.add(new Bikey<>("one", 1));
+        set.add(new BikeyImpl<>("one", 1));
         assertFalse(set.isEmpty());
         assertTrue(set.contains("one", 1));
     }
@@ -130,7 +130,7 @@ public class TableBikeySetTest {
     public void anExistentBikeyCanBeRemoved() {
         set.add("one", 1);
         assertEquals(1, set.size());
-        assertTrue(set.remove(new Bikey<>("one", 1)));
+        assertTrue(set.remove(new BikeyImpl<>("one", 1)));
         assertTrue(set.isEmpty());
     }
 
@@ -173,7 +173,7 @@ public class TableBikeySetTest {
     @Test
     public void anAddedBikeyIsCointanied() {
         set.add("one", 1);
-        assertTrue(set.contains(new Bikey<>("one", 1)));
+        assertTrue(set.contains(new BikeyImpl<>("one", 1)));
     }
 
     @Test
@@ -442,9 +442,9 @@ public class TableBikeySetTest {
             Integer col = rnd.nextInt(maxValue / 10);
             boolean added = set.add(row, col);
             if (added) {
-                assertTrue(set.contains(new Bikey<>(row, col)));
+                assertTrue(set.contains(new BikeyImpl<>(row, col)));
             }
-            present.add(new Bikey<>(row, col));
+            present.add(new BikeyImpl<>(row, col));
         }
         assertEquals(present.size(), set.size());
         for (Bikey<String, Integer> item : present) {

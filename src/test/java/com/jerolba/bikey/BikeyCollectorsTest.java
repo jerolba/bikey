@@ -224,7 +224,7 @@ public class BikeyCollectorsTest {
             Set<Bikey<Integer, Integer>> set = new HashSet<>();
             for (int i = 0; i < 2000; i++) {
                 for (int j = 0; j < 20; j++) {
-                    set.add(new Bikey<>(i, j));
+                    set.add(new BikeyImpl<>(i, j));
                 }
             }
             BikeySet<Integer, Integer> collected = set.parallelStream()
@@ -251,7 +251,7 @@ public class BikeyCollectorsTest {
         }
 
         public Bikey<String, String> getProductStore() {
-            return new Bikey<>(getProductRef(), getStoreRef());
+            return new BikeyImpl<>(getProductRef(), getStoreRef());
         }
 
         public String getProductRef() {

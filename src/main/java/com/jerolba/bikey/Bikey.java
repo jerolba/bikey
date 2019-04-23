@@ -15,52 +15,43 @@
  */
 package com.jerolba.bikey;
 
-import java.util.Objects;
+public interface Bikey<R, C> {
 
-public class Bikey<R, C> {
+    /**
+     * Returns the key row corresponding to this key.
+     *
+     * @return the key row corresponding to this key
+     */
+    R getRow();
 
-    private final R row;
-    private final C column;
+    /**
+     * Returns the key column corresponding to this key.
+     *
+     * @return the key column corresponding to this key
+     */
+    C getColumn();
 
-    public Bikey(R row, C column) {
-        this.row = row;
-        this.column = column;
-    }
-
-    public R getRow() {
-        return row;
-    }
-
-    public C getColumn() {
-        return column;
-    }
-
+    /**
+     * Compares the specified object with this entry for equality. Returns
+     * <tt>true</tt> if the given object is also a bikey and the two entries
+     * represent the same key.
+     *
+     * @param o
+     *            object to be compared for equality with this map entry
+     * @return <tt>true</tt> if the specified object is equal to this bikey
+     */
     @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((column == null) ? 0 : column.hashCode());
-        result = prime * result + ((row == null) ? 0 : row.hashCode());
-        return result;
-    }
+    boolean equals(Object o);
 
+    /**
+     * Returns the hash code value for this bikey.
+     *
+     * @return the hash code value for this bikey
+     * @see Object#hashCode()
+     * @see Object#equals(Object)
+     * @see #equals(Object)
+     */
     @Override
-    public boolean equals(Object o) {
-        if (o == this) {
-            return true;
-        }
-        if (o instanceof Bikey) {
-            Bikey<?, ?> e = (Bikey<?, ?>) o;
-            if (Objects.equals(row, e.getRow()) && Objects.equals(column, e.getColumn())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public String toString() {
-        return "[" + row + ", " + column + "]";
-    }
+    int hashCode();
 
 }

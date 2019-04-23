@@ -156,7 +156,7 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
         if (root == null) {
             return null;
         }
-        V removed = (V) remove(root, key);
+        V removed = remove(root, key);
         if (removed != null) {
             if (root.isEmpty()) {
                 root = null;
