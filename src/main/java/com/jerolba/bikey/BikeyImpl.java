@@ -41,8 +41,8 @@ class BikeyImpl<R, C> implements Bikey<R, C> {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((column == null) ? 0 : column.hashCode());
         result = prime * result + ((row == null) ? 0 : row.hashCode());
+        result = prime * result + ((column == null) ? 0 : column.hashCode());
         return result;
     }
 
