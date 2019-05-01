@@ -26,7 +26,7 @@ public class IntArrayMapTest extends IntKeyMapTest {
     private static int MAX_SIZE = 10_000;
 
     public IntKeyMap<String> getNewIntKeyMap() {
-        return new IntArrayMap<>(MAX_SIZE);
+        return new IntArrayMap<>();
     }
 
     @Test
@@ -34,6 +34,24 @@ public class IntArrayMapTest extends IntKeyMapTest {
         assertThrows(IndexOutOfBoundsException.class, () -> {
             map.put(-1, "-one");
         });
+    }
+
+    @Test
+    public void doesNotAcceptNearMaxIntValue() {
+        assertThrows(OutOfMemoryError.class, () -> {
+            map.put(Integer.MAX_VALUE - 1, "Error");
+        });
+    }
+
+    @Test
+    public void canGrowFromInitialCapacity() {
+        IntArrayMap<String> map = new IntArrayMap<>(100);
+        map.put(1, "1");
+        map.put(100, "100");
+        map.put(250, "250");
+        assertTrue(map.containsKey(1));
+        assertTrue(map.containsKey(100));
+        assertTrue(map.containsKey(250));
     }
 
     @Test
@@ -111,7 +129,6 @@ public class IntArrayMapTest extends IntKeyMapTest {
             IntKeyMap<String> newOne = new IntArrayMap<>(map);
             assertContainsAll(newOne);
         }
-
 
         @Test
         @SuppressWarnings("unchecked")

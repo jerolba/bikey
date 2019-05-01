@@ -34,18 +34,29 @@ import java.util.function.IntConsumer;
 @SuppressWarnings("unchecked")
 class IntArrayMap<V> implements IntKeyMap<V>, Cloneable {
 
+    private static final int DEFAULT_CAPACITY = 10;
+    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+
+    private int minCapacity;
     private int size = 0;
     private Object[] array;
     private int maxIndex = -1;
 
-    IntArrayMap(int maxSize) {
-        this.array = new Object[maxSize];
+    IntArrayMap(int minCapacity) {
+        this.minCapacity = minCapacity;
+        this.array = new Object[minCapacity];
+    }
+
+    IntArrayMap() {
+        this.minCapacity = DEFAULT_CAPACITY;
+        this.array = new Object[minCapacity];
     }
 
     IntArrayMap(IntArrayMap<V> m) {
-        this(m.array.length);
+        this.minCapacity = m.minCapacity;
         this.size = m.size;
         this.maxIndex = m.maxIndex;
+        this.array = new Object[m.array.length];
         System.arraycopy(m.array, 0, array, 0, m.array.length);
     }
 
@@ -63,12 +74,15 @@ class IntArrayMap<V> implements IntKeyMap<V>, Cloneable {
      *             if the specified map is null
      */
     IntArrayMap(IntKeyMap<V> m) {
+        this.minCapacity = DEFAULT_CAPACITY;
         int maxValue = 0;
         for (int i : m.keySet()) {
-            maxValue = i;
+            if (i > maxValue) {
+                maxValue = i;
+            }
         }
         this.array = new Object[maxValue + 1];
-        this.putAll(m);
+        m.forEach(this::put);
     }
 
     @Override
@@ -82,15 +96,37 @@ class IntArrayMap<V> implements IntKeyMap<V>, Cloneable {
     @Override
     public V put(int key, V value) {
         Objects.requireNonNull(value);
+        if (key >= array.length) {
+            int newCapacity = growCapacity(array.length, key + 1);
+            Object[] newArray = new Object[newCapacity];
+            System.arraycopy(array, 0, newArray, 0, array.length);
+            array = newArray;
+            array[key] = value;
+            size++;
+            maxIndex = key;
+            return null;
+        }
         Object previous = array[key];
         array[key] = value;
         if (previous == null) {
             size++;
-            if (key > maxIndex) {
-                maxIndex = key;
-            }
+        }
+        if (key > maxIndex) {
+            maxIndex = key;
         }
         return (V) previous;
+    }
+
+    static int growCapacity(int currentCapacity, int neededCapacity) {
+        int newCapacity = currentCapacity + (currentCapacity >> 1);
+        if (newCapacity < neededCapacity) {
+            int fraction = (neededCapacity + 1) / currentCapacity;
+            newCapacity = (fraction + 1) * currentCapacity;
+        }
+        if (newCapacity < 0 || newCapacity >= MAX_ARRAY_SIZE) {
+            throw new OutOfMemoryError();
+        }
+        return newCapacity;
     }
 
     @Override

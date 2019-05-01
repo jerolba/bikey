@@ -27,6 +27,14 @@ public class MatrixBikeyMapTest extends BikeyMapTest {
         return new MatrixBikeyMap<>(10000);
     }
 
+    @Test
+    public void canHaveUndefinedColumnCapacity() {
+        BikeyMap<String, String, String> bikeyMap = new MatrixBikeyMap<>();
+        for (int i = 0; i < 1_000_000; i++) {
+            bikeyMap.put("row", Integer.toString(i), "VALUE");
+        }
+    }
+
     @Nested
     class CopyMap {
 

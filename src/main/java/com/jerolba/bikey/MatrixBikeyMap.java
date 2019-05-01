@@ -17,8 +17,26 @@ package com.jerolba.bikey;
 
 public class MatrixBikeyMap<R, C, V> extends TableBikeyMap<R, C, V> {
 
-    public MatrixBikeyMap(int width) {
-        super(() -> new IntArrayMap<>(width));
+    /**
+     * Constructs a new {@code TableBikeyMap} using {@link IntArrayMap} as
+     * {@link IntKeyMap}
+     */
+    public MatrixBikeyMap() {
+        super(() -> new IntArrayMap<>());
+    }
+
+    /**
+     * Constructs a new {@code TableBikeyMap} using {@link IntArrayMap} as
+     * {@link IntKeyMap} with a given default capacity.
+     *
+     * This default capacity allows to configure the optimum size which
+     * minimizes wasted space
+     *
+     * @param defaultCapacity
+     *            minimum and default capacity of the array
+     */
+    public MatrixBikeyMap(int defaultCapacity) {
+        super(() -> new IntArrayMap<>(defaultCapacity));
     }
 
     /**
