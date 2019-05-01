@@ -207,8 +207,11 @@ public class TableBikeySet<R, C> extends AbstractSet<Bikey<R, C>> implements Bik
     public Object clone() {
         try {
             TableBikeySet<R, C> newSet = (TableBikeySet<R, C>) super.clone();
-            newSet.columnIndex = new HashMap<>(this.columnIndex);
             newSet.columnsValues = new ArrayList<>(this.columnsValues);
+            newSet.columnIndex = new HashMap<>(this.columnIndex.size());
+            this.columnIndex.forEach((col, index) -> {
+                newSet.columnIndex.put(col, index.clone());
+            });
             newSet.valuesInRow = new HashMap<>(this.valuesInRow.size());
             this.valuesInRow.forEach((row, bitSet) -> newSet.valuesInRow.put(row, (BitSet) bitSet.clone()));
             return newSet;
