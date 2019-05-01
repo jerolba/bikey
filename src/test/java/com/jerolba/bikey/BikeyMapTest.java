@@ -241,6 +241,12 @@ public abstract class BikeyMapTest {
     }
 
     @Test
+    public void computeIfAbsentReturnsNullIfFunctionReturnsNullAndDoesntModifyMap() {
+        assertEquals(null, map.computeIfAbsent("one", "1", (r, c) -> null));
+        assertEquals(0, map.size());
+    }
+
+    @Test
     public void computeIfAbsentComputesIfValueNotPresent() {
         assertEquals("one1one1", map.computeIfAbsent("one", "1", (r, c) -> r + c + r + c));
         assertEquals("one1one1", map.get("one", "1"));
@@ -258,6 +264,14 @@ public abstract class BikeyMapTest {
     public void computeIfPresentDoesNothingIfValueNotPresent() {
         assertNull(map.computeIfPresent("one", "1", (r, c, value) -> value + "[" + r + "," + c + "]"));
         assertFalse(map.containsKey("one", "1"));
+    }
+
+    @Test
+    public void computeIfPresentRemovesElementIfFunctionReturnsNull() {
+        map.put("one", "1", "one-1");
+        assertNull(map.computeIfPresent("one", "1", (r, c, value) -> null));
+        assertFalse(map.containsKey("one", "1"));
+        assertTrue(map.isEmpty());
     }
 
     @Test
@@ -347,10 +361,23 @@ public abstract class BikeyMapTest {
         assertTrue(iterator.hasNext());
         BikeyEntry<String, String, String> next = iterator.next();
         assertEquals("one", next.getRow());
+        assertEquals("one", next.getKey().getRow());
         assertEquals("1", next.getColumn());
+        assertEquals("1", next.getKey().getColumn());
         assertEquals("one-1", next.getValue());
 
         assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    public void iteratedBikeyMapCanNotBeModified() {
+        map.put("one", "1", "one-1");
+        Iterator<BikeyEntry<String, String, String>> iterator = map.iterator();
+        assertTrue(iterator.hasNext());
+        BikeyEntry<String, String, String> next = iterator.next();
+        assertThrows(UnsupportedOperationException.class, () -> {
+            next.setValue("Error");
+        });
     }
 
     @Nested

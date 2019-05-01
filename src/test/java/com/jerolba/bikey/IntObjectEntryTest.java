@@ -47,13 +47,26 @@ public class IntObjectEntryTest {
         assertFalse(withNull.equals(new IntObjectEntry<>(2, null)));
         assertFalse(withNull.equals(new IntObjectEntry<>(1, "1")));
         assertTrue(withNull.equals(new IntObjectEntry<>(1, null)));
-
     }
 
     @Test
     public void toStringTest() {
         IntObjectEntry<String> some = new IntObjectEntry<>(1, "2");
         assertEquals("1=2", some.toString());
+    }
+
+    @Test
+    public void keyAsInteger() {
+        IntObjectEntry<String> some = new IntObjectEntry<>(928292, "928292");
+        assertTrue(new Integer(928292).equals(some.getKey()));
+    }
+
+    @Test
+    public void valueCanNotBeModified() {
+        IntObjectEntry<String> some = new IntObjectEntry<>(928292, "928292");
+        assertThrows(UnsupportedOperationException.class, () -> {
+            some.setValue("ERROR");
+        });
     }
 
 }
