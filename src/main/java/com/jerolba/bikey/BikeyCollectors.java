@@ -150,6 +150,8 @@ public class BikeyCollectors {
      *            column key type of the map keys
      * @param <U>
      *            the output type of the value mapping function
+     * @param <M>
+     *            the type of the resulting {@code BikeMap}
      * @param keyMapper
      *            a mapping function to produce bikeys
      * @param valueMapper
@@ -195,6 +197,8 @@ public class BikeyCollectors {
      *            column key type of the map keys
      * @param <U>
      *            the output type of the value mapping function
+     * @param <M>
+     *            the type of the resulting {@code BikeMap}
      * @param rowKeyMapper
      *            a mapping function to produce row key
      * @param columnKeyMapper
