@@ -1,6 +1,9 @@
+[![Maven Central](https://img.shields.io/maven-central/v/com.jerolba/bikey.svg)](https://maven-badges.herokuapp.com/maven-central/com.jerolba/bikey)
 [![Build Status](https://circleci.com/gh/jerolba/bikey.svg?style=shield)](https://circleci.com/gh/jerolba/bikey) 
+[![Download](https://api.bintray.com/packages/jerolba/maven/bikey/images/download.svg)](https://bintray.com/jerolba/maven/bikey/_latestVersion)
 [![Codecov](https://codecov.io/gh/jerolba/bikey/branch/master/graph/badge.svg)](https://codecov.io/gh/jerolba/bikey/)
 [![License](http://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
+[![Javadocs](https://javadoc.io/badge/com.jerolba/bikey.svg)](https://javadoc.io/doc/com.jerolba/bikey)
 
 <div align="center">
 	<br>
@@ -20,7 +23,9 @@ Implementing it manually with a `Map<R, Map<C, V>>`, `Map<Pair<R, C>, V>` or a `
 
 ## Some Quick Examples
 
-`BikeyMap` API is defined like the [Map](https://docs.oracle.com/javase/8/docs/api/java/util/Map.html) interface but everywhere a key is needed, you must provide both key values:
+`BikeyMap` API is defined like the [Map](https://docs.oracle.com/javase/8/docs/api/java/util/Map.html) interface but everywhere a key is needed, you must provide both key values.
+
+To simplify the example `String`s has been used as keys, but any object that implements `equals` and `hashCode` can be used as row or column key. You can also use any kind of object as value. I've used Integer to simplify the following code:
 
 ```java
 BikeyMap<String, String, Integer> stock = new TableBikeyMap<>();
@@ -54,6 +59,12 @@ if (stock.containsKey("tie-ref-789", "store-23")) {
     ....
 }
 
+//Get all product/stores presents in the map
+BikeySet<String, String> productStores = map.bikeySet();
+
+//BikeySet<R, C> also implements Set<Bikey<R, C>>
+Set<Bikey<String, String>> productStoresSet = map.bikeySet();
+
 //Get products and stores with stock
 BikeySet<String, String> withStock = stock.entrySet().stream()
     .filter(entry -> entry.getValue() > 0)
@@ -65,38 +76,66 @@ stock.forEach((product, store, units) -> {
     System.out.println("Product " + product + " has " + units + " in store " + store);
 });
 ```
-To simplify the example `String`s has been used as keys, but any object that implements `equals` and `hashCode` can be used as row or column key.
+
 
 `BikeySet` API is defined like the [Set](https://docs.oracle.com/javase/8/docs/api/java/util/Set.html) interface but everywhere an element is used, changes to two values:
 
 ```java
-BikeySet<String, String> avengerFilm = new TableBikeySet<>();
-avengerFilm.add("Hulk", "The Avengers");
-avengerFilm.add("Iron Man", "The Avengers");
-avengerFilm.add("Thor", "The Avengers");
-avengerFilm.add("Thor", "Thor: Ragnarok");
-avengerFilm.add("Captain America", "Avengers: Age of Ultron");
-avengerFilm.add("Captain America", "Avengers: Infinity War");
-avengerFilm.add("Captain America", "Doctor Strange");
+BikeySet<String, String> avengerFilms = new TableBikeySet<>();
+avengerFilms.add("Hulk", "The Avengers");
+avengerFilms.add("Iron Man", "The Avengers");
+avengerFilms.add("Thor", "Avengers: Age of Ultron");
+avengerFilms.add("Thor", "Thor: Ragnarok");
+avengerFilms.add("Captain America", "Avengers: Infinity War");
 ....
 
-if (avengerFilm.contains("Iron Man", "Black Panther")) {
-    ....
-}
-if (avengerFilm.contains("Hulk", "Avengers: Age of Ultron")) {
+if (avengerFilms.contains("Iron Man", "Black Panther")) {
     ....
 }
 
-List<String> ironManFilms = avengerFilm.stream()
+//Films in the Set
+Set<String> filmsInSet = avengerFilms.columnKeySet();
+
+//Avengers in the Set
+Set<String> filmsInSet = avengerFilms.rowKeySet();
+
+//Films with Iron Man
+List<String> ironManFilms = avengerFilms.stream()
     .filter(entry -> entry.getRow().equals("Iron Man"))
     .map(Bikey::getColumn)
     .collect(toList());
+
+//Call to a BiFunction for each element in the Set
+bikeySet.forEach(this::doSomething);
+
+public void doSomething(String avenger, String film) {
+  ....
+}
 ```
 
-## Contribute
-Feel free to dive in! [Open an issue](https://github.com/jerolba/jfleet/issues/new) or submit PRs.
+## Dependency
 
-Any contributor and maintainer of this project follows the [Contributor Covenant Code of Conduct](https://github.com/jerolba/jfleet/blob/master/CODE_OF_CONDUCT.md).
+Bikey is uploaded to Maven Central Repository and to use it, you need to add the following Maven dependency:
+
+```xml
+<dependency>
+  <groupId>com.jerolba</groupId>
+  <artifactId>bikey</artifactId>
+  <version>0.9.0</version>
+</dependency>
+```
+
+in Gralde:
+
+`implementation 'bikey:0.9.0'`
+
+or download the single [jar](http://central.maven.org/maven2/com/jerolba/bikey/0.9.0/bikey-0.9.0.jar) from Maven Central Repository.
+
+
+## Contribute
+Feel free to dive in! [Open an issue](https://github.com/jerolba/bikey/issues/new) or submit PRs.
+
+Any contributor and maintainer of this project follows the [Contributor Covenant Code of Conduct](https://github.com/jerolba/bikey/blob/master/CODE_OF_CONDUCT.md).
 
 ## License
-[Apache 2](https://github.com/jerolba/jfleet/blob/master/LICENSE.txt) © Jerónimo López
+[Apache 2](https://github.com/jerolba/bikey/blob/master/LICENSE.txt) © Jerónimo López
