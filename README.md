@@ -17,9 +17,9 @@ Bikey implements Map and Set data structures with two keys minimizing memory con
 
 Current collections libraries ([Guava](https://github.com/google/guava), [Commons Collection](https://commons.apache.org/proper/commons-collections/), [Eclipse Collections](https://github.com/eclipse/eclipse-collections)) have poor or not support to Maps and Sets with two keys.
 
-Implementing it manually with a `Map<R, Map<C, V>>`, `Map<Pair<R, C>, V>` or a `Set<Pair<R, C>>` consumes a lot of memory, and [choosing an incorrect hashCode function](https://medium.com/@jerolba/hashing-and-maps-87950eed673f) for Pair (or equivalent) class can [penalize memory and CPU consumption](https://medium.com/@jerolba/composite-key-hashmaps-1422e2e6cdbc).
+Implementing it manually with a `Map<R, Map<C, V>>`, `Map<Tuple<R, C>, V>` or a `Set<Tuple<R, C>>` consumes a lot of memory, and [choosing an incorrect hashCode function](https://medium.com/@jerolba/hashing-and-maps-87950eed673f) for Tuple (or equivalent) class can [penalize memory and CPU consumption](https://medium.com/@jerolba/composite-key-hashmaps-1422e2e6cdbc).
 
-**Bikey Map collection can reduce to a 15%-30% of consumed memory** by a traditional double map (depending on the map _fill rate_) and **Bikey Set collection can reduce to a 1% of consumed memory by a Set\<Pair\>**, with none or low penalization in access time.
+**Bikey Map collection can reduce to a 15%-30% of consumed memory** by a traditional double map (depending on the map _fill rate_) and **Bikey Set collection can reduce to a 1% of consumed memory by a Set\<Tuple\>**, with none or low penalization in access time.
 
 ## Some Quick Examples
 
@@ -113,6 +113,18 @@ public void doSomething(String avenger, String film) {
 }
 ```
 
+## Implementations
+
+`BikeyMap<R, C ,V>` has two implementations:
+
+- `TableBikeyMap<R, C ,V>`: optimized for memory consumption, and with performance similar to a double map or tuple map version.
+- `MatrixBikeyMap<R, C V`: optimizes performance, but with the disadvantage of consuming a little more memory with low fill rates.
+
+depending on your business logic, you can use one or the other. 
+
+`MatrixBikeyMap` behaves like a matrix and grows quickly in memory consumption, but then it remains stable. It's recommended only if the fill rate is greater than 60% or access time to their elements is important. By default we recommend to use `TableBikey` implementation. 
+
+
 ## Dependency
 
 Bikey is uploaded to Maven Central Repository and to use it, you need to add the following Maven dependency:
@@ -125,12 +137,44 @@ Bikey is uploaded to Maven Central Repository and to use it, you need to add the
 </dependency>
 ```
 
-in Gralde:
+in Gradle:
 
-`implementation 'bikey:0.9.0'`
+`implementation ''com.jerolba:bikey:0.9.0''`
 
 or download the single [jar](http://central.maven.org/maven2/com/jerolba/bikey/0.9.0/bikey-0.9.0.jar) from Maven Central Repository.
 
+## Benchmarks
+
+Execute your own benchmarks before deciding to use this library, but as a reference you can start with these numbers:
+
+### Memory
+
+Compared to `Map<R, Map<C, V>>` and `Map<Tuple<R, C>, V>`, the memory consumed filling a map with 10.000 x 1.000 elements is:
+
+<img src="https://docs.google.com/spreadsheets/d/e/2PACX-1vSQ28bJxu3RYU0WwBWKmm1_d6sLM0I3aPvr5bctzsblGgHRvfvOSkczdoT-JXpAmXrD74DShTlzo1Um/pubchart?oid=2140734164&format=image"/>
+
+Compared to `HashMap<R, HashSet<C>>` and `HashSet<Tuple<R, C>>` implementations, the memory consumed filling a Set with 10.000 x 1.000 elements is: 
+
+<img src="https://docs.google.com/spreadsheets/d/e/2PACX-1vSQ28bJxu3RYU0WwBWKmm1_d6sLM0I3aPvr5bctzsblGgHRvfvOSkczdoT-JXpAmXrD74DShTlzo1Um/pubchart?oid=635532048&format=image"/>
+
+### Performance
+
+To create and fill randomly different maps in each implementation, the time spent is:
+
+<img src="https://docs.google.com/spreadsheets/d/e/2PACX-1vRiwv5Uo_b2c7jklJn59b__EaUnNfnhakDaZUgjMue7tE9OL0IQPbwFmY7QR42VGCEH4jJJkHLIPpk2/pubchart?oid=1182671191&format=image"/>
+
+To find randomly different maps in each implementation, the time spent is:
+
+<img src="https://docs.google.com/spreadsheets/d/e/2PACX-1vRiwv5Uo_b2c7jklJn59b__EaUnNfnhakDaZUgjMue7tE9OL0IQPbwFmY7QR42VGCEH4jJJkHLIPpk2/pubchart?oid=1247212528&format=image"/>
+
+To create and fill randomly a Set with 10.000 x 1.000 elements, the time spent is:
+
+<img src="https://docs.google.com/spreadsheets/d/e/2PACX-1vSQ28bJxu3RYU0WwBWKmm1_d6sLM0I3aPvr5bctzsblGgHRvfvOSkczdoT-JXpAmXrD74DShTlzo1Um/pubchart?oid=817188927&format=image"/>
+
+To check randomly the existence of each element in a Set with 10.000 x 1.000 elements, the time spent is:
+
+<img src="https://docs.google.com/spreadsheets/d/e/2PACX-1vSQ28bJxu3RYU0WwBWKmm1_d6sLM0I3aPvr5bctzsblGgHRvfvOSkczdoT-JXpAmXrD74DShTlzo1Um/pubchart?oid=1242227435&format=image"/>
+ 
 
 ## Contribute
 Feel free to dive in! [Open an issue](https://github.com/jerolba/bikey/issues/new) or submit PRs.
