@@ -1,5 +1,6 @@
 plugins {
   id "com.github.hierynomus.license" version "0.14.0"
+  id "com.jfrog.bintray" version "1.8.4"
 }
 
 apply plugin: 'java'
@@ -25,6 +26,7 @@ jacocoTestReport {
 check.dependsOn jacocoTestReport
 
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
@@ -38,4 +40,78 @@ test {
     testLogging {
         events "passed", "skipped", "failed"
     }
+}
+
+task sourceJar(type: Jar) {
+    from sourceSets.main.allJava
+    classifier "sources"
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            artifact sourceJar
+            artifact javadocJar
+            artifactId 'bikey'
+            version version
+            pom.withXml {
+                asNode().children().last() + {
+                    resolveStrategy = Closure.DELEGATE_FIRST
+                    name 'bikey'
+                    description 'Bikey: low memory footprint Map and Set implementation on objects with composited keys'
+                    url 'https://github.com/jerolba/bikey'
+                    licenses {
+                        license {
+                            name 'The Apache Software License, Version 2.0'
+                            url 'http://www.apache.org/license/LICENSE-2.0.txt'
+                            distribution 'repo'
+                        }
+                    }
+                    developers {
+                        developer {
+                            id 'jerolba'
+                            name 'Jerónimo López'
+                            email 'jerolba+bikey@gmail.com'
+                        }
+                    }
+                    scm {
+                        connection 'scm:git:git://github.com/jerolba/bikey.git'
+                        developerConnection 'scm:git:ssh://github.com:jerolba/bikey.git'
+                        url 'https://github.com/jerolba/bikey'
+                    }
+                }
+            }
+        }
+    }
+}
+
+if (project.hasProperty('bintrayUser')){
+    bintray {
+        user = bintrayUser
+        key = bintrayKey
+        publications = ['mavenJava'] 
+        pkg {
+            repo = 'maven'
+            name = 'bikey'
+            desc = 'Bikey: low memory footprint Map and Set implementation on objects with composited keys'
+            websiteUrl = 'https://github.com/jerolba/bikey'
+            issueTrackerUrl = 'https://github.com/jerolba/bikey/issues'
+            licenses = ['Apache-2.0']
+            vcsUrl = 'https://github.com/jerolba/bikey.git'
+            labels = ['java', 'map', 'set', 'bikey', 'multiplekey']
+            version {
+                name = '0.9.0'
+                desc = 'Initial release'
+                released  = new Date()
+            }
+        }
+    }
+}else {
+    println 'No bintray configuration found. Expected bintray user and API key at $HOME/.gradle/gradle.properties file.'
 }
