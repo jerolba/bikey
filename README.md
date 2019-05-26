@@ -139,7 +139,7 @@ Bikey is uploaded to Maven Central Repository and to use it, you need to add the
 
 in Gradle:
 
-`implementation ''com.jerolba:bikey:0.9.0''`
+`implementation 'com.jerolba:bikey:0.9.0'`
 
 or download the single [jar](http://central.maven.org/maven2/com/jerolba/bikey/0.9.0/bikey-0.9.0.jar) from Maven Central Repository.
 
