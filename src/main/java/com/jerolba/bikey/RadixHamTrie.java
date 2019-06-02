@@ -94,12 +94,12 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
         int previousIndex = 0;
         RadixHamTrieNode currentNode = root;
         for (;;) {
-            int numberNonHigherBits = currentNode.getNumberNonHigherBits();
-            int currentNodeHigherBits = currentNode.getHigherBits();
-            int keyHigherBits = getKeyHigherBits(key, numberNonHigherBits);
-            if (keyHigherBits != currentNodeHigherBits) {
-                int rightSharedBitsNumber = rightNotSharedBits(keyHigherBits ^ currentNodeHigherBits);
-                RadixHamTrieNode parentNode = currentNode.createParentNodeWith(key, value, rightSharedBitsNumber);
+            int numberNonPrefixBits = currentNode.getNumberNonPrefixBits() + BIT_SIZE;
+            int currentNodePrefixBits = currentNode.getPrefixBits();
+            int keyPrefixBits = getKeyPrefixBits(key, numberNonPrefixBits);
+            if (keyPrefixBits != currentNodePrefixBits) {
+                int numberOfBitsInXor = nonPrefixBitsSharedInXor(keyPrefixBits ^ currentNodePrefixBits);
+                RadixHamTrieNode parentNode = currentNode.createParentNodeWith(key, value, numberOfBitsInXor);
                 if (previousNode == null) {
                     root = parentNode;
                 } else {
@@ -107,10 +107,10 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
                 }
                 return incSize();
             }
-            if (isLeafNode(numberNonHigherBits)) {
+            if (isLeafNode(numberNonPrefixBits)) {
                 return incSize((V) currentNode.set(key & BIT_MASK, value));
             }
-            int idx = getIdxInNode(key, numberNonHigherBits);
+            int idx = getIdxInNode(key, numberNonPrefixBits);
             RadixHamTrieNode nextNode = (RadixHamTrieNode) currentNode.get(idx);
             if (nextNode == null) {
                 currentNode.set(idx, newLeafNode(key, value));
@@ -120,6 +120,25 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
             previousIndex = idx;
             currentNode = nextNode;
         }
+    }
+
+    private static int nonPrefixBitsSharedInXor(int value) {
+        if ((value & L1) == 0) {
+            return BIT_SIZE * 1;
+        }
+        if ((value & L2) == 0) {
+            return BIT_SIZE * 2;
+        }
+        if ((value & L3) == 0) {
+            return BIT_SIZE * 3;
+        }
+        if ((value & L4) == 0) {
+            return BIT_SIZE * 4;
+        }
+        if ((value & L5) == 0) {
+            return BIT_SIZE * 5;
+        }
+        return 30;
     }
 
     private V incSize() {
@@ -139,14 +158,14 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
     public V get(int key) {
         RadixHamTrieNode currentNode = root;
         while (currentNode != null) {
-            int numberNonHigherBits = currentNode.getNumberNonHigherBits();
-            if (getKeyHigherBits(key, numberNonHigherBits) != currentNode.getHigherBits()) {
+            int numberNonPrefixBits = currentNode.getNumberNonPrefixBits()  + BIT_SIZE;
+            if (getKeyPrefixBits(key, numberNonPrefixBits) != currentNode.getPrefixBits()) {
                 return null;
             }
-            if (isLeafNode(numberNonHigherBits)) {
+            if (isLeafNode(numberNonPrefixBits)) {
                 return (V) currentNode.get(key & BIT_MASK);
             }
-            currentNode = (RadixHamTrieNode) currentNode.get(getIdxInNode(key, numberNonHigherBits));
+            currentNode = (RadixHamTrieNode) currentNode.get(getIdxInNode(key, numberNonPrefixBits));
         }
         return null;
     }
@@ -168,14 +187,14 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
 
     @SuppressWarnings("unchecked")
     private V remove(RadixHamTrieNode currentNode, int key) {
-        int numberNonHigherBits = currentNode.getNumberNonHigherBits();
-        if (getKeyHigherBits(key, numberNonHigherBits) != currentNode.getHigherBits()) {
+        int numberNonPrefixBits = currentNode.getNumberNonPrefixBits() + BIT_SIZE;
+        if (getKeyPrefixBits(key, numberNonPrefixBits) != currentNode.getPrefixBits()) {
             return null;
         }
-        if (isLeafNode(numberNonHigherBits)) {
+        if (isLeafNode(numberNonPrefixBits)) {
             return (V) currentNode.remove(key & BIT_MASK);
         }
-        int idxInNode = getIdxInNode(key, numberNonHigherBits);
+        int idxInNode = getIdxInNode(key, numberNonPrefixBits);
         RadixHamTrieNode nextNode = (RadixHamTrieNode) currentNode.get(idxInNode);
         if (nextNode == null) {
             return null;
@@ -190,12 +209,27 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
         return removed;
     }
 
-    private static boolean isLeafNode(int noPathBits) {
-        return noPathBits == BIT_SIZE;
+    private static int getKeyPrefixBits(int key, int numberNonPrefixBits) {
+        if (numberNonPrefixBits < ARR_SIZE) {
+            return key & (0xFFFFFFFF << numberNonPrefixBits);
+        }
+        return 0;
     }
 
-    private static int getIdxInNode(int key, int numberNonHigherBits) {
-        return (key >>> (numberNonHigherBits - BIT_SIZE)) & BIT_MASK;
+    static RadixHamTrieNode newLeafNode(int key, Object value) {
+        RadixHamTrieNode node = new RadixHamTrieNode(key & MASK_PATH, 0);
+        node.bitmap = 1 << (key & BIT_MASK);
+        node.arr = new Object[1];
+        node.arr[0] = value;
+        return node;
+    }
+
+    private static boolean isLeafNode(int numberNonPrefixBits) {
+        return numberNonPrefixBits == BIT_SIZE;
+    }
+
+    private static int getIdxInNode(int key, int numberNonPrefixBits) {
+        return (key >>> (numberNonPrefixBits - BIT_SIZE)) & BIT_MASK;
     }
 
     @Override
@@ -549,25 +583,6 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
 
     }
 
-    private static int rightNotSharedBits(int value) {
-        if ((value & L1) == 0) {
-            return BIT_SIZE * 1;
-        }
-        if ((value & L2) == 0) {
-            return BIT_SIZE * 2;
-        }
-        if ((value & L3) == 0) {
-            return BIT_SIZE * 3;
-        }
-        if ((value & L4) == 0) {
-            return BIT_SIZE * 4;
-        }
-        if ((value & L5) == 0) {
-            return BIT_SIZE * 5;
-        }
-        return 30;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (o == this) {
@@ -581,7 +596,8 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
             return false;
         }
         try {
-            // TODO: implements traversing both trees in parallel if RadixHamTrie
+            // TODO: implements traversing both trees in parallel if
+            // RadixHamTrie
             for (IntObjectEntry<V> e : entrySet()) {
                 int key = e.getIntKey();
                 V value = e.getValue();
@@ -628,21 +644,6 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
         }
     }
 
-    static int getKeyHigherBits(int key, int numberNonHigherBits) {
-        if (numberNonHigherBits < ARR_SIZE) {
-            return key & (0xFFFFFFFF << numberNonHigherBits);
-        }
-        return 0;
-    }
-
-    static RadixHamTrieNode newLeafNode(int key, Object value) {
-        RadixHamTrieNode node = new RadixHamTrieNode(key & MASK_PATH, 0);
-        node.bitmap = 1 << (key & BIT_MASK);
-        node.arr = new Object[1];
-        node.arr[0] = value;
-        return node;
-    }
-
     /**
      * RadixHamTrieNode implements a radix hash array mapped trie node data
      * structure.
@@ -651,23 +652,37 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
      * The radix is 32, and manage 5 bits of the int key.
      *
      * <p>
-     * The higher used bits to reach each node are stored in <tt>path</tt>
-     * variable. Each node stores bits from parent nodes, and is not necessary
-     * to carry it traversing the trie.
+     * The prefix bits used to reach each node are stored in <tt>path</tt>
+     * variable. Each node stores all bits from parent nodes, and is not
+     * necessary to carry it traversing the trie.
      *
      * <p>
-     * To know the number if bits that forms the path (and the current trie
-     * level), <tt>32 - the number of higher bits</tt> is also stored.
+     * Each subtree of the RadixHamTrie can be cosidered a valid tree, because
+     * each subtree has all needed information needed to traverse and extract
+     * its information.
+     *
+     * <p>
+     * To know the number of bits that forms the path,
+     * <tt>32 - the number of prefix used bits - 5</tt> is also stored.
      *
      * <p>
      * To save memory storing both values, and because the last five bits are
      * never used in path, both values are combined in a single variable.
      *
+     * <p>
+     * Up to the highest 27 bits of path contain the prefix and the lowest 5
+     * contains the number of bits *not* used by the prefix.
+     *
+     * <p>
+     * "number non prefix bits" term is used as synonymous of "number prefix
+     * bits" because initial resulted code operated always with its complement
+     * subtracting five. For performance, complement number of bits is used.
+     *
      * <pre>
      * {@code
      *
      * +----------------------------------+-------+
-     * | Higher bits used in each node    | #bits |
+     * | Prefix bits used in each node    | #bits |
      * +----------------------------------+-------+
      * | 00 00000 00000 00000 00000 00000 | 00000 |
      * +----------------------------------+-------+
@@ -683,36 +698,43 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
 
         /**
          * Creates an empty node with no elements
+         *
+         * @param prefixBits
+         *            prefix bits stored in the node. It's expected that non
+         *            prefix bits must be setted to 0
+         * @param numberNonPrefixBits
+         *            number of bits not used in by de prefix
          */
-        private RadixHamTrieNode(int leftPath, int numberNonHigherBits) {
-            this.path = leftPath + numberNonHigherBits;
+        private RadixHamTrieNode(int prefixBits, int numberNonPrefixBits) {
+            this.path = prefixBits + numberNonPrefixBits;
         }
 
         /**
-         * Returns the number of bits that are not part of the path to this node
-         * NumberHigherBits = 32 - NumberNonHigherBits
+         * Returns the number of bits that are not part of the path in this node
+         * NumberPrefixBits = 32 - NumberNonPrefixBits - 5
          *
-         * @return the number of bit that are not used in the path to the node
+         * @return the number of bits that are not used in the prefix stored in
+         *         the node
          */
-        public int getNumberNonHigherBits() {
-            return (path & BIT_MASK) + BIT_SIZE;
+        public int getNumberNonPrefixBits() {
+            return path & BIT_MASK;
         }
 
         /**
-         * Returns true if the node is leaf node
+         * Returns true if the node is a leaf node
          *
-         * @return true if the nod is a leaf node
+         * @return true if the node is a leaf node
          */
         public boolean isLeaf() {
             return (path & BIT_MASK) == 0;
         }
 
         /**
-         * Returns highger bits of the trie node
+         * Returns prefix bits of the trie node
          *
-         * @return highger bits of the trie node
+         * @return prefix bits of the trie node
          */
-        public int getHigherBits() {
+        public int getPrefixBits() {
             return path & MASK_PATH;
         }
 
@@ -783,15 +805,15 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
          *            key with which the specified value is to be associated
          * @param value
          *            value to be associated with the specified key
-         * @param numberRightBitsShared
-         *            number of lower bits shared by both childs
+         * @param numberNonPrefixBits
+         *            number of non prefix bits used by both childs
          * @return the created parent node with both childs
          */
-        public RadixHamTrieNode createParentNodeWith(int key, Object value, int numberRightBitsShared) {
-            int leftBits = getKeyHigherBits(key, numberRightBitsShared + BIT_SIZE);
-            RadixHamTrieNode parentNode = new RadixHamTrieNode(leftBits, numberRightBitsShared);
-            int idx1 = (path >>> numberRightBitsShared) & BIT_MASK;
-            int idx2 = (key >>> numberRightBitsShared) & BIT_MASK;
+        public RadixHamTrieNode createParentNodeWith(int key, Object value, int numberNonPrefixBits) {
+            int parentNodePrefixBits = getKeyPrefixBits(key, numberNonPrefixBits + BIT_SIZE);
+            RadixHamTrieNode parentNode = new RadixHamTrieNode(parentNodePrefixBits, numberNonPrefixBits);
+            int idx1 = (path >>> numberNonPrefixBits) & BIT_MASK;
+            int idx2 = (key >>> numberNonPrefixBits) & BIT_MASK;
             assert (idx1 != idx2);
 
             Object[] arr = new Object[2];
@@ -891,7 +913,7 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
 
         public void forEach(IntObjectConsumer<Object> action) {
             int it = 0;
-            int highBits = getHigherBits();
+            int highBits = getPrefixBits();
             for (int idx = 0, mask = 1; idx < ARR_SIZE; idx++, mask = mask << 1) {
                 if (isBitPresent(mask)) {
                     action.accept(highBits + idx, arr[it]);
@@ -901,7 +923,7 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
         }
 
         public void forEachKey(IntConsumer action) {
-            int highBits = getHigherBits();
+            int highBits = getPrefixBits();
             for (int idx = 0, mask = 1; idx < ARR_SIZE; idx++, mask = mask << 1) {
                 if (isBitPresent(mask)) {
                     action.accept(highBits + idx);
@@ -932,7 +954,7 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
             private int it = 0;
             private int idx = 0;
             private int mask = 1;
-            private int highBits = getHigherBits();
+            private int highBits = getPrefixBits();
 
             ArrayIterator() {
                 gotoNext();
@@ -975,7 +997,7 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
             sb.append('{');
             boolean first = true;
             if (isLeaf()) {
-                int higherBits = getHigherBits();
+                int prefixBits = getPrefixBits();
                 for (int idx = 0; idx < ARR_SIZE; idx++) {
                     Object object = get(idx);
                     if (object != null) {
@@ -984,7 +1006,7 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
                         } else {
                             first = false;
                         }
-                        sb.append(higherBits + idx).append("=").append(get(idx));
+                        sb.append(prefixBits + idx).append("=").append(get(idx));
                     }
                 }
             } else {
