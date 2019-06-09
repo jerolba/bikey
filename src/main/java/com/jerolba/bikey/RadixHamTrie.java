@@ -1006,7 +1006,7 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
                         } else {
                             first = false;
                         }
-                        sb.append(prefixBits + idx).append("=").append(get(idx));
+                        sb.append(prefixBits + idx).append("=").append(object);
                     }
                 }
             } else {
@@ -1018,7 +1018,7 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
                         } else {
                             first = false;
                         }
-                        sb.append(get(idx));
+                        sb.append(object);
                     }
                 }
             }
