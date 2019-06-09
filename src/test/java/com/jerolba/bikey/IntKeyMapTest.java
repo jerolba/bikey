@@ -50,7 +50,7 @@ public abstract class IntKeyMapTest {
     }
 
     @Test
-    public void inAnEmptySetCanAddAnInexistentElement() {
+    public void inAnEmptyMapCanAddAnInexistentElement() {
         assertNull(map.put(1, "one"));
         assertEquals(1, map.size());
     }
@@ -116,6 +116,7 @@ public abstract class IntKeyMapTest {
         assertTrue(map.isEmpty());
     }
 
+    //Implementation detail tests for RadixHamTrie version
     @Test
     public void testNoNextNodeBranchRemoveMap() {
         map.put(12, "12");
