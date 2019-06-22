@@ -15,16 +15,18 @@
  */
 package com.jerolba.bikey;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-public class RadixHamTrieTest extends IntKeyMapTest {
+public class RadixTrieTest extends IntKeyMapTest {
 
+    @Override
     public IntKeyMap<String> getNewIntKeyMap() {
-        return new RadixHamTrie<>();
+        return new RadixTrie<>();
     }
 
     @Test
@@ -36,23 +38,23 @@ public class RadixHamTrieTest extends IntKeyMapTest {
 
     @Test
     public void testPutRangeNegative() {
-        for (int i = 0; i < 100000; ++i) {
+        for (int i = 0; i < 100_000; ++i) {
             map.put(-i, Integer.toString(-i));
             assertEquals(i + 1, map.size());
             assertEquals(Integer.toString(-i), map.get(-i));
         }
-        for (int i = 0; i < 100000; ++i) {
+        for (int i = 0; i < 100_000; ++i) {
             assertEquals(Integer.toString(-i), map.get(-i));
         }
     }
 
     @Test
     public void testPutRangeNegativeReverse() {
-        for (int i = 100000; i >= 0; --i) {
+        for (int i = 100_000; i >= 0; --i) {
             map.put(-i, Integer.toString(-i));
             assertEquals(Integer.toString(-i), map.get(-i));
         }
-        for (int i = 0; i <= 100000; ++i) {
+        for (int i = 0; i <= 100_000; ++i) {
             assertEquals(Integer.toString(-i), map.get(-i));
         }
     }
@@ -90,20 +92,20 @@ public class RadixHamTrieTest extends IntKeyMapTest {
 
         @Test
         public void testConstructor() {
-            IntKeyMap<String> newOne = new RadixHamTrie<>(map);
+            IntKeyMap<String> newOne = new RadixTrie<>(map);
             assertContainsAll(newOne);
         }
 
         @Test
         @SuppressWarnings("unchecked")
         public void testClone() {
-            IntKeyMap<String> cloned = (IntKeyMap<String>) ((RadixHamTrie<String>) map).clone();
+            IntKeyMap<String> cloned = (IntKeyMap<String>) ((RadixTrie<String>) map).clone();
             assertContainsAll(cloned);
         }
 
         @Test
         public void testPutAll() {
-            IntKeyMap<String> copy = new RadixHamTrie<>();
+            IntKeyMap<String> copy = new RadixTrie<>();
             copy.putAll(map);
             assertContainsAll(copy);
         }

@@ -15,6 +15,8 @@
  */
 package com.jerolba.bikey;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.BiConsumer;
@@ -30,7 +32,7 @@ public class TableBikeyMap<R, C, V> implements BikeyMap<R, C, V>, Cloneable {
     private int size = 0;
 
     public TableBikeyMap() {
-        this(() -> new RadixHamTrie<>());
+        this(() -> new RadixTrie<>());
     }
 
     public TableBikeyMap(Supplier<? extends IntKeyMap<V>> innerMapSupplier) {
@@ -56,9 +58,9 @@ public class TableBikeyMap<R, C, V> implements BikeyMap<R, C, V>, Cloneable {
 
     @Override
     public V put(R row, C column, V value) {
-        Objects.requireNonNull(row, "Row can not be null");
-        Objects.requireNonNull(column, "Column can not be null");
-        Objects.requireNonNull(value, "Value can not be null");
+        requireNonNull(row, "Row can not be null");
+        requireNonNull(column, "Column can not be null");
+        requireNonNull(value, "Value can not be null");
 
         IntKeyMap<V> intMap = rows.computeIfAbsent(row, r -> innerMapSupplier.get());
         ColumnInfo columnInfo = columnIndex.get(column);
@@ -77,8 +79,8 @@ public class TableBikeyMap<R, C, V> implements BikeyMap<R, C, V>, Cloneable {
 
     @Override
     public V get(R row, C column) {
-        Objects.requireNonNull(row, "Row can not be null");
-        Objects.requireNonNull(row, "Column can not be null");
+        requireNonNull(row, "Row can not be null");
+        requireNonNull(row, "Column can not be null");
 
         ColumnInfo columnInfo = columnIndex.get(column);
         if (columnInfo != null) {
@@ -92,8 +94,8 @@ public class TableBikeyMap<R, C, V> implements BikeyMap<R, C, V>, Cloneable {
 
     @Override
     public V remove(R row, C column) {
-        Objects.requireNonNull(row, "Row can not be null");
-        Objects.requireNonNull(row, "Column can not be null");
+        requireNonNull(row, "Row can not be null");
+        requireNonNull(row, "Column can not be null");
 
         ColumnInfo columnInfo = columnIndex.get(column);
         if (columnInfo != null) {
@@ -160,7 +162,7 @@ public class TableBikeyMap<R, C, V> implements BikeyMap<R, C, V>, Cloneable {
 
     @Override
     public boolean containsValue(Object value) {
-        Objects.requireNonNull(value, "Value can not be null");
+        requireNonNull(value, "Value can not be null");
         for (IntKeyMap<V> row : rows.values()) {
             if (row.containsValue(value)) {
                 return true;
@@ -171,14 +173,14 @@ public class TableBikeyMap<R, C, V> implements BikeyMap<R, C, V>, Cloneable {
 
     @Override
     public boolean containsRow(Object row) {
-        Objects.requireNonNull(row, "row can not be null");
+        requireNonNull(row, "row can not be null");
         IntKeyMap<V> intKeyMap = rows.get(row);
         return intKeyMap != null && intKeyMap.size() > 0;
     }
 
     @Override
     public boolean containsColumn(Object column) {
-        Objects.requireNonNull(column, "column can not be null");
+        requireNonNull(column, "column can not be null");
         ColumnInfo columnInfo = columnIndex.get(column);
         return columnInfo != null && columnInfo.count > 0;
     }
@@ -217,7 +219,7 @@ public class TableBikeyMap<R, C, V> implements BikeyMap<R, C, V>, Cloneable {
 
     @Override
     public void forEachBikey(BiConsumer<? super R, ? super C> action) {
-        Objects.requireNonNull(action);
+        requireNonNull(action);
         rows.entrySet().forEach(entry -> {
             IntKeyMap<V> intKeyMap = entry.getValue();
             if (!intKeyMap.isEmpty()) {
@@ -229,7 +231,7 @@ public class TableBikeyMap<R, C, V> implements BikeyMap<R, C, V>, Cloneable {
 
     @Override
     public void forEach(TriConsumer<? super R, ? super C, ? super V> action) {
-        Objects.requireNonNull(action);
+        requireNonNull(action);
         rows.entrySet().forEach(entry -> {
             IntKeyMap<V> intKeyMap = entry.getValue();
             if (!intKeyMap.isEmpty()) {
@@ -316,7 +318,7 @@ public class TableBikeyMap<R, C, V> implements BikeyMap<R, C, V>, Cloneable {
 
         @Override
         public void forEach(Consumer<? super V> action) {
-            Objects.requireNonNull(action);
+            requireNonNull(action);
             rows.values().forEach(rowValue -> rowValue.values().forEach(action));
         }
 
@@ -345,7 +347,7 @@ public class TableBikeyMap<R, C, V> implements BikeyMap<R, C, V>, Cloneable {
         @Override
         @SuppressWarnings("unchecked")
         public boolean contains(Object o) {
-            Objects.requireNonNull(o, "Value can not be null");
+            requireNonNull(o, "Value can not be null");
             Bikey<R, C> key = (Bikey<R, C>) o;
             return containsKey(key.getRow(), key.getColumn());
         }
@@ -358,7 +360,7 @@ public class TableBikeyMap<R, C, V> implements BikeyMap<R, C, V>, Cloneable {
 
         @Override
         public void forEach(Consumer<? super Bikey<R, C>> action) {
-            Objects.requireNonNull(action);
+            requireNonNull(action);
             TableBikeyMap.this.forEachBikey((r, c) -> action.accept(new BikeyImpl<>(r, c)));
         }
 
@@ -384,7 +386,7 @@ public class TableBikeyMap<R, C, V> implements BikeyMap<R, C, V>, Cloneable {
         @Override
         @SuppressWarnings("unchecked")
         public boolean contains(Object o) {
-            Objects.requireNonNull(o, "Value can not be null");
+            requireNonNull(o, "Value can not be null");
             BikeyEntry<R, C, V> key = (BikeyEntry<R, C, V>) o;
             V value = get(key.getRow(), key.getColumn());
             return (value != null && value.equals(key.getValue()));

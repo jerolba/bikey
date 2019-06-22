@@ -15,12 +15,15 @@
  */
 package com.jerolba.bikey;
 
+import static java.util.Collections.emptyIterator;
+import static java.util.Objects.requireNonNull;
+
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
 /**
- * Implements a radix hash array mapped trie data structure, with radix=32
+ * Implements a radix array mapped trie data structure, with radix=32
  *
  * <p>
  * The key is a primitive <tt>int</tt> and allows all range of integer values.
@@ -35,17 +38,17 @@ import java.util.function.IntConsumer;
  * compact unbounded integer array (Integer[T])
  *
  * <p>
- * The implementation uses a Radix HAMT over int keys. Each node of the HAMT has
+ * The implementation uses a Radix tree over int keys. Each node of the trie has
  * 5 bits.
  *
  * <p>
- * Iteration over its elements is done in preorder and it is sorted in
- * ascending.
+ * Iteration over its elements is done in preorder and it is sorted in ascending
+ * order.
  *
  * @param <V>
  *            Type of the associated element
  */
-public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
+public class RadixTrie<V> implements IntKeyMap<V>, Cloneable {
 
     private static final int BIT_SIZE = 5;
     private static final int ARR_SIZE = 1 << BIT_SIZE;
@@ -59,25 +62,25 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
     private static final int L4 = 0xFFFFFFFF << BIT_SIZE * 5;
     private static final int L5 = 0xFFFFFFFF << BIT_SIZE * 6;
 
-    private RadixHamTrieNode root;
+    private RadixTrieNode root;
     private int size = 0;
 
     /**
-     * Constructs an empty {@code RadixHamTrie}
+     * Constructs an empty {@code RadixTrie}
      */
-    public RadixHamTrie() {
+    public RadixTrie() {
     }
 
     /**
-     * Constructs a new {@code RadixHamTrie} with the same mappings as the
-     * specified {@code IntKeyMap}.
+     * Constructs a new {@code RadixTrie} with the same mappings as the specified
+     * {@code IntKeyMap}.
      *
      * @param m
      *            the map whose mappings are to be placed in this map
      * @throws NullPointerException
      *             if the specified map is null
      */
-    public RadixHamTrie(IntKeyMap<? extends V> m) {
+    public RadixTrie(IntKeyMap<? extends V> m) {
         this();
         putAll(m);
     }
@@ -85,21 +88,21 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
     @Override
     @SuppressWarnings("unchecked")
     public V put(int key, V value) {
-        Objects.requireNonNull(value, "Value can not be null");
+        requireNonNull(value, "Value can not be null");
         if (root == null) {
             root = newLeafNode(key, value);
             return incSize();
         }
-        RadixHamTrieNode previousNode = null;
+        RadixTrieNode previousNode = null;
         int previousIndex = 0;
-        RadixHamTrieNode currentNode = root;
+        RadixTrieNode currentNode = root;
         for (;;) {
             int numberNonPrefixBits = currentNode.getNumberNonPrefixBits() + BIT_SIZE;
             int currentNodePrefixBits = currentNode.getPrefixBits();
             int keyPrefixBits = getKeyPrefixBits(key, numberNonPrefixBits);
             if (keyPrefixBits != currentNodePrefixBits) {
                 int numberOfBitsInXor = nonPrefixBitsSharedInXor(keyPrefixBits ^ currentNodePrefixBits);
-                RadixHamTrieNode parentNode = currentNode.createParentNodeWith(key, value, numberOfBitsInXor);
+                RadixTrieNode parentNode = currentNode.createParentNodeWith(key, value, numberOfBitsInXor);
                 if (previousNode == null) {
                     root = parentNode;
                 } else {
@@ -111,7 +114,7 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
                 return incSize((V) currentNode.set(key & BIT_MASK, value));
             }
             int idx = getIdxInNode(key, numberNonPrefixBits);
-            RadixHamTrieNode nextNode = (RadixHamTrieNode) currentNode.get(idx);
+            RadixTrieNode nextNode = (RadixTrieNode) currentNode.get(idx);
             if (nextNode == null) {
                 currentNode.set(idx, newLeafNode(key, value));
                 return incSize();
@@ -156,16 +159,16 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
     @Override
     @SuppressWarnings("unchecked")
     public V get(int key) {
-        RadixHamTrieNode currentNode = root;
+        RadixTrieNode currentNode = root;
         while (currentNode != null) {
-            int numberNonPrefixBits = currentNode.getNumberNonPrefixBits()  + BIT_SIZE;
+            int numberNonPrefixBits = currentNode.getNumberNonPrefixBits() + BIT_SIZE;
             if (getKeyPrefixBits(key, numberNonPrefixBits) != currentNode.getPrefixBits()) {
                 return null;
             }
             if (isLeafNode(numberNonPrefixBits)) {
                 return (V) currentNode.get(key & BIT_MASK);
             }
-            currentNode = (RadixHamTrieNode) currentNode.get(getIdxInNode(key, numberNonPrefixBits));
+            currentNode = (RadixTrieNode) currentNode.get(getIdxInNode(key, numberNonPrefixBits));
         }
         return null;
     }
@@ -186,7 +189,7 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
     }
 
     @SuppressWarnings("unchecked")
-    private V remove(RadixHamTrieNode currentNode, int key) {
+    private V remove(RadixTrieNode currentNode, int key) {
         int numberNonPrefixBits = currentNode.getNumberNonPrefixBits() + BIT_SIZE;
         if (getKeyPrefixBits(key, numberNonPrefixBits) != currentNode.getPrefixBits()) {
             return null;
@@ -195,7 +198,7 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
             return (V) currentNode.remove(key & BIT_MASK);
         }
         int idxInNode = getIdxInNode(key, numberNonPrefixBits);
-        RadixHamTrieNode nextNode = (RadixHamTrieNode) currentNode.get(idxInNode);
+        RadixTrieNode nextNode = (RadixTrieNode) currentNode.get(idxInNode);
         if (nextNode == null) {
             return null;
         }
@@ -216,8 +219,8 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
         return 0;
     }
 
-    static RadixHamTrieNode newLeafNode(int key, Object value) {
-        RadixHamTrieNode node = new RadixHamTrieNode(key & MASK_PATH, 0);
+    static RadixTrieNode newLeafNode(int key, Object value) {
+        RadixTrieNode node = new RadixTrieNode(key & MASK_PATH, 0);
         node.bitmap = 1 << (key & BIT_MASK);
         node.arr = new Object[1];
         node.arr[0] = value;
@@ -234,25 +237,25 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
 
     @Override
     public void forEachKey(IntConsumer action) {
-        Objects.requireNonNull(action);
+        requireNonNull(action);
         forEachKey(root, action);
     }
 
-    private static void forEachKey(RadixHamTrieNode node, IntConsumer action) {
+    private static void forEachKey(RadixTrieNode node, IntConsumer action) {
         if (node.isLeaf()) {
             node.forEachKey(action);
         } else {
-            node.forEach((idx, value) -> forEachKey((RadixHamTrieNode) value, action));
+            node.forEach((idx, value) -> forEachKey((RadixTrieNode) value, action));
         }
     }
 
     @Override
     public boolean containsValue(Object value) {
-        Objects.requireNonNull(value, "Value can not be null");
+        requireNonNull(value, "Value can not be null");
         return containsValue(root, value);
     }
 
-    private static boolean containsValue(RadixHamTrieNode node, Object value) {
+    private static boolean containsValue(RadixTrieNode node, Object value) {
         if (node.isLeaf()) {
             for (IntObjectEntry<?> e : node) {
                 if (e.getValue().equals(value)) {
@@ -261,7 +264,7 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
             }
         } else {
             for (IntObjectEntry<?> e : node) {
-                if (containsValue((RadixHamTrieNode) e.getValue(), value)) {
+                if (containsValue((RadixTrieNode) e.getValue(), value)) {
                     return true;
                 }
             }
@@ -281,8 +284,8 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
     }
 
     /**
-     * Returns a shallow copy of this <tt>RadixHamTrie</tt> instance: the
-     * elements themselves are not cloned.
+     * Returns a shallow copy of this <tt>RadixTrie</tt> instance: the elements
+     * themselves are not cloned.
      *
      * @return a shallow copy of this map
      */
@@ -290,7 +293,7 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
     @SuppressWarnings("unchecked")
     public Object clone() {
         try {
-            RadixHamTrie<V> newMap = (RadixHamTrie<V>) super.clone();
+            RadixTrie<V> newMap = (RadixTrie<V>) super.clone();
             forEach(newMap::put);
             return newMap;
         } catch (CloneNotSupportedException e) {
@@ -300,29 +303,29 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
 
     @Override
     public void forEach(IntObjectConsumer<V> action) {
-        Objects.requireNonNull(action);
+        requireNonNull(action);
         forEach(root, action);
     }
 
     @SuppressWarnings("unchecked")
-    private void forEach(RadixHamTrieNode node, IntObjectConsumer<V> action) {
+    private void forEach(RadixTrieNode node, IntObjectConsumer<V> action) {
         if (node.isLeaf()) {
             node.forEach((idx, value) -> action.accept(idx, (V) value));
         } else {
-            node.forEachValue(value -> forEach((RadixHamTrieNode) value, action));
+            node.forEachValue(value -> forEach((RadixTrieNode) value, action));
         }
     }
 
     @Override
     public void forEach(Consumer<? super IntObjectEntry<V>> action) {
-        Objects.requireNonNull(action);
+        requireNonNull(action);
         forEach((i, t) -> action.accept(new IntObjectEntry<>(i, t)));
     }
 
     @Override
     public Iterator<IntObjectEntry<V>> iterator() {
         if (isEmpty()) {
-            return Collections.emptyIterator();
+            return emptyIterator();
         }
         return new EntryIterator();
     }
@@ -349,15 +352,15 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
     }
 
     /**
-     * Abstract implementation of {@code Iterator<IntObjectEntry<T>>} which is
+     * Abstract implementation like {@code Iterator<IntObjectEntry<T>>} which is
      * extended later by {@link EntryIterator} {@link ValueIterator} and
      * {@link KeyIterator}.
      */
-    private abstract class IntHamtIterator {
+    private abstract class IntIterator {
 
         private IteratorLevel currentLeaf = null;
 
-        IntHamtIterator() {
+        IntIterator() {
             IteratorLevel rootLevel = new IteratorLevel(root, null);
             currentLeaf = rootLevel.fillStack();
         }
@@ -393,7 +396,7 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
             private Iterator<IntObjectEntry<?>> childNodeIterator;
             private boolean isLeaf;
 
-            IteratorLevel(RadixHamTrieNode node, IteratorLevel parent) {
+            IteratorLevel(RadixTrieNode node, IteratorLevel parent) {
                 this.isLeaf = node.isLeaf();
                 this.parent = parent;
                 this.childNodeIterator = node.iterator();
@@ -401,7 +404,7 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
 
             public IteratorLevel fillStackFromLevel() {
                 IntObjectEntry<?> nextChild = childNodeIterator.next();
-                RadixHamTrieNode childNode = (RadixHamTrieNode) nextChild.getValue();
+                RadixTrieNode childNode = (RadixTrieNode) nextChild.getValue();
                 IteratorLevel lowerLevel = new IteratorLevel(childNode, this);
                 return lowerLevel.fillStack();
             }
@@ -427,18 +430,18 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
 
         @Override
         public int size() {
-            return RadixHamTrie.this.size();
+            return RadixTrie.this.size();
         }
 
         @Override
         public void clear() {
-            RadixHamTrie.this.clear();
+            RadixTrie.this.clear();
         }
 
         @Override
         public Iterator<V> iterator() {
             if (isEmpty()) {
-                return Collections.emptyIterator();
+                return emptyIterator();
             }
             return new ValueIterator();
         }
@@ -455,8 +458,8 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
 
         @Override
         public void forEach(Consumer<? super V> action) {
-            Objects.requireNonNull(action);
-            RadixHamTrie.this.forEach((key, value) -> action.accept(value));
+            requireNonNull(action);
+            RadixTrie.this.forEach((key, value) -> action.accept(value));
         }
 
     }
@@ -465,18 +468,18 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
 
         @Override
         public int size() {
-            return RadixHamTrie.this.size();
+            return RadixTrie.this.size();
         }
 
         @Override
         public void clear() {
-            RadixHamTrie.this.clear();
+            RadixTrie.this.clear();
         }
 
         @Override
         public Iterator<Integer> iterator() {
             if (isEmpty()) {
-                return Collections.emptyIterator();
+                return emptyIterator();
             }
             return new KeyIterator();
         }
@@ -493,8 +496,8 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
 
         @Override
         public void forEach(Consumer<? super Integer> action) {
-            Objects.requireNonNull(action);
-            RadixHamTrie.this.forEachKey(key -> action.accept(key));
+            requireNonNull(action);
+            RadixTrie.this.forEachKey(key -> action.accept(key));
         }
 
     }
@@ -503,18 +506,18 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
 
         @Override
         public int size() {
-            return RadixHamTrie.this.size();
+            return RadixTrie.this.size();
         }
 
         @Override
         public void clear() {
-            RadixHamTrie.this.clear();
+            RadixTrie.this.clear();
         }
 
         @Override
         public Iterator<IntObjectEntry<V>> iterator() {
             if (isEmpty()) {
-                return Collections.emptyIterator();
+                return emptyIterator();
             }
             return new EntryIterator();
         }
@@ -522,7 +525,7 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
         @Override
         @SuppressWarnings("unchecked")
         public boolean contains(Object o) {
-            Objects.requireNonNull(o, "Value can not be null");
+            requireNonNull(o, "Value can not be null");
             IntObjectEntry<V> key = (IntObjectEntry<V>) o;
             V value = get(key.getIntKey());
             return (value != null && value.equals(key.getValue()));
@@ -535,13 +538,13 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
 
         @Override
         public void forEach(Consumer<? super IntObjectEntry<V>> action) {
-            Objects.requireNonNull(action);
-            RadixHamTrie.this.forEach(action);
+            requireNonNull(action);
+            RadixTrie.this.forEach(action);
         }
 
     }
 
-    private final class EntryIterator extends IntHamtIterator implements Iterator<IntObjectEntry<V>> {
+    private final class EntryIterator extends IntIterator implements Iterator<IntObjectEntry<V>> {
 
         @Override
         public boolean hasNext() {
@@ -555,7 +558,7 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
 
     }
 
-    private final class ValueIterator extends IntHamtIterator implements Iterator<V> {
+    private final class ValueIterator extends IntIterator implements Iterator<V> {
 
         @Override
         public boolean hasNext() {
@@ -569,7 +572,7 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
 
     }
 
-    private final class KeyIterator extends IntHamtIterator implements Iterator<Integer> {
+    private final class KeyIterator extends IntIterator implements Iterator<Integer> {
 
         @Override
         public boolean hasNext() {
@@ -596,8 +599,7 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
             return false;
         }
         try {
-            // TODO: implements traversing both trees in parallel if
-            // RadixHamTrie
+            // TODO: implements traversing both trees in parallel if RadixTrie
             for (IntObjectEntry<V> e : entrySet()) {
                 int key = e.getIntKey();
                 V value = e.getValue();
@@ -645,38 +647,37 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
     }
 
     /**
-     * RadixHamTrieNode implements a radix hash array mapped trie node data
-     * structure.
+     * RadixTrieNode implements a radix array mapped trie node data structure.
      *
      * <p>
      * The radix is 32, and manage 5 bits of the int key.
      *
      * <p>
-     * The prefix bits used to reach each node are stored in <tt>path</tt>
-     * variable. Each node stores all bits from parent nodes, and is not
-     * necessary to carry it traversing the trie.
+     * The prefix bits used to reach each node are stored in <tt>path</tt> variable.
+     * Each node stores all bits from parent nodes, and is not necessary to carry it
+     * traversing the trie.
      *
      * <p>
-     * Each subtree of the RadixHamTrie can be cosidered a valid tree, because
-     * each subtree has all needed information needed to traverse and extract
-     * its information.
+     * Each subtree of the RadixTrie can be cosidered a valid tree, because each
+     * subtree has all needed information needed to traverse and extract its
+     * information.
      *
      * <p>
      * To know the number of bits that forms the path,
      * <tt>32 - the number of prefix used bits - 5</tt> is also stored.
      *
      * <p>
-     * To save memory storing both values, and because the last five bits are
-     * never used in path, both values are combined in a single variable.
+     * To save memory storing both values, and because the last five bits are never
+     * used in path, both values are combined in a single variable.
      *
      * <p>
      * Up to the highest 27 bits of path contain the prefix and the lowest 5
      * contains the number of bits *not* used by the prefix.
      *
      * <p>
-     * "number non prefix bits" term is used as synonymous of "number prefix
-     * bits" because initial resulted code operated always with its complement
-     * subtracting five. For performance, complement number of bits is used.
+     * "number non prefix bits" term is used as synonymous of "number prefix bits"
+     * because initial resulted code operated always with its complement subtracting
+     * five. For performance, complement number of bits is used.
      *
      * <pre>
      * {@code
@@ -690,7 +691,7 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
      * }
      * </pre>
      */
-    static class RadixHamTrieNode implements Iterable<IntObjectEntry<?>> {
+    static class RadixTrieNode implements Iterable<IntObjectEntry<?>> {
 
         private Object[] arr;
         private int bitmap = 0;
@@ -700,12 +701,12 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
          * Creates an empty node with no elements
          *
          * @param prefixBits
-         *            prefix bits stored in the node. It's expected that non
-         *            prefix bits must be setted to 0
+         *            prefix bits stored in the node. It's expected that non prefix bits
+         *            must be setted to 0
          * @param numberNonPrefixBits
          *            number of bits not used in by de prefix
          */
-        private RadixHamTrieNode(int prefixBits, int numberNonPrefixBits) {
+        private RadixTrieNode(int prefixBits, int numberNonPrefixBits) {
             this.path = prefixBits + numberNonPrefixBits;
         }
 
@@ -713,8 +714,7 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
          * Returns the number of bits that are not part of the path in this node
          * NumberPrefixBits = 32 - NumberNonPrefixBits - 5
          *
-         * @return the number of bits that are not used in the prefix stored in
-         *         the node
+         * @return the number of bits that are not used in the prefix stored in the node
          */
         public int getNumberNonPrefixBits() {
             return path & BIT_MASK;
@@ -753,16 +753,16 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
         }
 
         /**
-         * Stores a value in certain position. If an associated value already
-         * exists, overwrite it. If it doesn't exists, the compressed array
-         * increase the size in one element.
+         * Stores a value in certain position. If an associated value already exists,
+         * overwrite it. If it doesn't exists, the compressed array increase the size in
+         * one element.
          *
          * @param idx
          *            index of the element in the uncompressed array
          * @param value
          *            the value to store
-         * @return the previous value in <tt>idx</tt> position, or <tt>null</tt>
-         *         if there was no value in <tt>idx</tt>.
+         * @return the previous value in <tt>idx</tt> position, or <tt>null</tt> if
+         *         there was no value in <tt>idx</tt>.
          */
         public Object set(int idx, Object value) {
             int bitIdx = 1 << idx;
@@ -795,11 +795,11 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
         }
 
         /**
-         * Create a new node parent of the current node with two childs: the
-         * current node and a new leaf node with the given key and value.
+         * Create a new node parent of the current node with two childs: the current
+         * node and a new leaf node with the given key and value.
          *
-         * The parent node is created using 5 + number of lower shared bits by
-         * both childs nodes.
+         * The parent node is created using 5 + number of lower shared bits by both
+         * childs nodes.
          *
          * @param key
          *            key with which the specified value is to be associated
@@ -809,9 +809,9 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
          *            number of non prefix bits used by both childs
          * @return the created parent node with both childs
          */
-        public RadixHamTrieNode createParentNodeWith(int key, Object value, int numberNonPrefixBits) {
+        public RadixTrieNode createParentNodeWith(int key, Object value, int numberNonPrefixBits) {
             int parentNodePrefixBits = getKeyPrefixBits(key, numberNonPrefixBits + BIT_SIZE);
-            RadixHamTrieNode parentNode = new RadixHamTrieNode(parentNodePrefixBits, numberNonPrefixBits);
+            RadixTrieNode parentNode = new RadixTrieNode(parentNodePrefixBits, numberNonPrefixBits);
             int idx1 = (path >>> numberNonPrefixBits) & BIT_MASK;
             int idx2 = (key >>> numberNonPrefixBits) & BIT_MASK;
             assert (idx1 != idx2);
@@ -830,13 +830,13 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
         }
 
         /**
-         * Removes the associated element in certain position and reduce the
-         * size of the compressed array if an element exists
+         * Removes the associated element in certain position and reduce the size of the
+         * compressed array if an element exists
          *
          * @param idx
          *            index of the element in the uncompressed array
-         * @return the previous value located in index value or <tt>null</tt> if
-         *         there was no value associated to this possition
+         * @return the previous value located in index value or <tt>null</tt> if there
+         *         was no value associated to this possition
          */
         public Object remove(int idx) {
             int bitIdx = 1 << idx;
@@ -886,8 +886,8 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
         }
 
         /**
-         * Returns <tt>true</tt> if the <tt>bitIdx</tt> is set to 1. This means
-         * that a value is stored in the associated array.
+         * Returns <tt>true</tt> if the <tt>bitIdx</tt> is set to 1. This means that a
+         * value is stored in the associated array.
          *
          * @param bitIdx
          *            possition in the bitmap
@@ -898,9 +898,9 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
         }
 
         /**
-         * Returns the associated possition in the array of a bit from the
-         * bitmap. It takes the <tt>idx</tt> left bits in the bitmap and counts
-         * the number of present 1s.
+         * Returns the associated possition in the array of a bit from the bitmap. It
+         * takes the <tt>idx</tt> left bits in the bitmap and counts the number of
+         * present 1s.
          *
          * @param idx
          *            index in the bitmap
@@ -944,7 +944,7 @@ public class RadixHamTrie<V> implements IntKeyMap<V>, Cloneable {
         @Override
         public Iterator<IntObjectEntry<?>> iterator() {
             if (arr == null) {
-                return Collections.emptyIterator();
+                return emptyIterator();
             }
             return new ArrayIterator();
         }

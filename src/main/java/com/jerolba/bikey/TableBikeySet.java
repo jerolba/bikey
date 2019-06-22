@@ -16,6 +16,8 @@
 
 package com.jerolba.bikey;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.BiConsumer;
@@ -52,8 +54,8 @@ public class TableBikeySet<R, C> extends AbstractSet<Bikey<R, C>> implements Bik
 
     @Override
     public boolean add(R row, C column) {
-        Objects.requireNonNull(row, "Row can not be null");
-        Objects.requireNonNull(column, "Column can not be null");
+        requireNonNull(row, "Row can not be null");
+        requireNonNull(column, "Column can not be null");
         BitSet bitSet = valuesInRow.computeIfAbsent(row, st -> new BitSet());
         ColumnInfo columnInfo = columnIndex.get(column);
         if (columnInfo == null) {
@@ -72,14 +74,14 @@ public class TableBikeySet<R, C> extends AbstractSet<Bikey<R, C>> implements Bik
 
     @Override
     public boolean add(Bikey<R, C> key) {
-        Objects.requireNonNull(key, "Key can not be null");
+        requireNonNull(key, "Key can not be null");
         return add(key.getRow(), key.getColumn());
     }
 
     @Override
     public boolean remove(R row, C column) {
-        Objects.requireNonNull(row, "Row can not be null");
-        Objects.requireNonNull(column, "Column can not be null");
+        requireNonNull(row, "Row can not be null");
+        requireNonNull(column, "Column can not be null");
 
         BitSet bitSet = valuesInRow.get(row);
         if (bitSet != null) {
@@ -104,7 +106,7 @@ public class TableBikeySet<R, C> extends AbstractSet<Bikey<R, C>> implements Bik
     @Override
     @SuppressWarnings("unchecked")
     public boolean remove(Object o) {
-        Objects.requireNonNull(o, "Object can not be null");
+        requireNonNull(o, "Object can not be null");
         Bikey<? extends R, ? extends C> key = (Bikey<? extends R, ? extends C>) o;
         return remove(key.getRow(), key.getColumn());
     }
@@ -121,8 +123,8 @@ public class TableBikeySet<R, C> extends AbstractSet<Bikey<R, C>> implements Bik
 
     @Override
     public boolean contains(R row, C column) {
-        Objects.requireNonNull(row, "Row can not be null");
-        Objects.requireNonNull(column, "Column can not be null");
+        requireNonNull(row, "Row can not be null");
+        requireNonNull(column, "Column can not be null");
 
         BitSet bitSet = valuesInRow.get(row);
         if (bitSet != null) {
@@ -137,14 +139,14 @@ public class TableBikeySet<R, C> extends AbstractSet<Bikey<R, C>> implements Bik
     @Override
     @SuppressWarnings("unchecked")
     public boolean contains(Object o) {
-        Objects.requireNonNull(o, "Object can not be null");
+        requireNonNull(o, "Object can not be null");
         Bikey<? extends R, ? extends C> key = (Bikey<? extends R, ? extends C>) o;
         return contains(key.getRow(), key.getColumn());
     }
 
     @Override
     public void forEach(BiConsumer<? super R, ? super C> action) {
-        Objects.requireNonNull(action);
+        requireNonNull(action);
         valuesInRow.entrySet().forEach(entry -> {
             R row = entry.getKey();
             BitSet valuesInRow = entry.getValue();

@@ -15,7 +15,7 @@
  */
 package com.jerolba.bikey;
 
-import static com.jerolba.bikey.RadixHamTrie.newLeafNode;
+import static com.jerolba.bikey.RadixTrie.newLeafNode;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 import static org.junit.jupiter.api.Assertions.*;
@@ -26,9 +26,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import com.jerolba.bikey.RadixHamTrie.RadixHamTrieNode;
+import com.jerolba.bikey.RadixTrie.RadixTrieNode;
 
-public class RadixHamTrieNodeTest {
+public class RadixTrieNodeTest {
 
     private static final int NVALUES = 1 << 5;
 
@@ -39,7 +39,7 @@ public class RadixHamTrieNodeTest {
         private int barKey = rnd.nextInt(32);
         private int fooKey = (barKey + 5) % 32;
 
-        private RadixHamTrieNode node = newLeafNode(barKey, "bar");
+        private RadixTrieNode node = newLeafNode(barKey, "bar");
 
         @Test
         public void mustBeCreatedWithValue() {
@@ -111,7 +111,7 @@ public class RadixHamTrieNodeTest {
 
         @Test
         public void canFillTheArray() {
-            RadixHamTrieNode node = newLeafNode(itKey, itKey);
+            RadixTrieNode node = newLeafNode(itKey, itKey);
             for (int i = 1; i < NVALUES; i++) {
                 itKey = (itKey + 1) % NVALUES;
                 assertNull(node.set(itKey, itKey));
@@ -127,7 +127,7 @@ public class RadixHamTrieNodeTest {
             Collections.shuffle(all);
             Iterator<Integer> it = all.iterator();
             int first = it.next();
-            RadixHamTrieNode node = newLeafNode(first, first);
+            RadixTrieNode node = newLeafNode(first, first);
             while (it.hasNext()) {
                 int next = it.next();
                 assertNull(node.set(next, next));
@@ -139,7 +139,7 @@ public class RadixHamTrieNodeTest {
 
         @Test
         public void aFilledArrayCanBeEmptied() {
-            RadixHamTrieNode node = newLeafNode(itKey, itKey);
+            RadixTrieNode node = newLeafNode(itKey, itKey);
             for (int i = 1; i < NVALUES; i++) {
                 itKey = (itKey + 1) % NVALUES;
                 assertNull(node.set(itKey, itKey));
@@ -160,7 +160,7 @@ public class RadixHamTrieNodeTest {
 
         @Test
         public void aFilledArrayCanBeEmptiedBackward() {
-            RadixHamTrieNode node = newLeafNode(itKey, itKey);
+            RadixTrieNode node = newLeafNode(itKey, itKey);
             for (int i = 1; i < NVALUES; i++) {
                 itKey = (itKey + 1) % NVALUES;
                 assertNull(node.set(itKey, itKey));
@@ -183,7 +183,7 @@ public class RadixHamTrieNodeTest {
             List<Integer> all = range(0, NVALUES).boxed().collect(toList());
             Collections.shuffle(all);
 
-            RadixHamTrieNode node = newLeafNode(itKey, itKey);
+            RadixTrieNode node = newLeafNode(itKey, itKey);
             for (int i = 1; i < NVALUES; i++) {
                 itKey = (itKey + 1) % NVALUES;
                 assertNull(node.set(itKey, itKey));
@@ -207,7 +207,7 @@ public class RadixHamTrieNodeTest {
     @Nested
     class Iteration {
 
-        private RadixHamTrieNode node;
+        private RadixTrieNode node;
 
         @BeforeEach
         void before() {
@@ -278,7 +278,7 @@ public class RadixHamTrieNodeTest {
 
         @Test
         public void emptyNodeDoesNotHaveNextIteration() {
-            RadixHamTrieNode node = newLeafNode(0, "foo");
+            RadixTrieNode node = newLeafNode(0, "foo");
             Iterator<IntObjectEntry<?>> it = node.iterator();
             assertTrue(it.hasNext());
             assertEquals("foo", it.next().getValue());
@@ -305,31 +305,31 @@ public class RadixHamTrieNodeTest {
 
     @Test
     void testToStringOneElement() {
-        RadixHamTrieNode node = newLeafNode(2, "foo");
+        RadixTrieNode node = newLeafNode(2, "foo");
         assertEquals("{2=foo}", node.toString());
     }
 
     @Test
     void testToStringEmpty() {
-        RadixHamTrieNode node = newLeafNode(2, "foo");
+        RadixTrieNode node = newLeafNode(2, "foo");
         node.remove(2);
         assertEquals("{}", node.toString());
     }
 
     @Test
     void testToStringMultipleElements() {
-        RadixHamTrieNode node = newLeafNode(2, "foo");
+        RadixTrieNode node = newLeafNode(2, "foo");
         node.set(10, "bar");
         assertEquals("{2=foo, 10=bar}", node.toString());
     }
 
     @Test
     void testMultipleLevels() {
-        RadixHamTrieNode node = newLeafNode(2, "foo");
+        RadixTrieNode node = newLeafNode(2, "foo");
         node.set(10, "bar");
-        RadixHamTrieNode parent = node.createParentNodeWith(34, "baz", 5);
+        RadixTrieNode parent = node.createParentNodeWith(34, "baz", 5);
         assertEquals("{{2=foo, 10=bar}, {34=baz}}", parent.toString());
-        RadixHamTrieNode newLeaf = (RadixHamTrieNode) parent.get(1);
+        RadixTrieNode newLeaf = (RadixTrieNode) parent.get(1);
         assertEquals("{34=baz}", newLeaf.toString());
     }
 

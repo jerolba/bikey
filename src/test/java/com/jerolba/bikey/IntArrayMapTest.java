@@ -71,7 +71,7 @@ public class IntArrayMapTest extends IntKeyMapTest {
 
     @Test
     public void hasEqualsToOtherImplementation() {
-        IntKeyMap<String> other = new RadixHamTrie<>();
+        IntKeyMap<String> other = new RadixTrie<>();
 
         map.put(1, "one");
         assertFalse(map.equals(other));
